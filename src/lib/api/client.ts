@@ -1,0 +1,191 @@
+import { ApiError } from "./errors";
+
+function getBaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    throw new Error("NEXT_PUBLIC_API_URL is not set");
+  }
+  return url.replace(/\/$/, "");
+}
+
+export type InzuApiDeps = {
+  getToken: () => Promise<string | null>;
+  getOrganizationId: () => string | null;
+};
+
+function buildUrl(
+  baseUrl: string,
+  path: string,
+  organizationId: string | null,
+  params?: Record<string, string>,
+): string {
+  const resolvedPath = path.includes(":organizationId")
+    ? path.replace(/:organizationId/g, organizationId ?? "")
+    : path;
+  const url = new URL(resolvedPath, baseUrl + "/");
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== "") {
+        url.searchParams.set(key, value);
+      }
+    }
+  }
+  return url.toString();
+}
+
+export function createInzuApiClient(deps: InzuApiDeps) {
+  const baseUrl = getBaseUrl();
+
+  async function request<T>(
+    method: string,
+    path: string,
+    options?: {
+      body?: unknown;
+      params?: Record<string, string>;
+      requiresOrg?: boolean;
+    },
+  ): Promise<T> {
+    const token = await deps.getToken();
+    if (!token) {
+      throw new ApiError(401, "Not authenticated");
+    }
+    const organizationId = deps.getOrganizationId();
+    if (options?.requiresOrg !== false && path.includes(":organizationId") && !organizationId) {
+      throw new ApiError(400, "Organization context required");
+    }
+    const url = buildUrl(baseUrl, path, organizationId, options?.params);
+    const res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(options?.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(options?.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiError(res.status, `API error ${res.status}`, text);
+    }
+    if (res.status === 204) {
+      return undefined as T;
+    }
+    return res.json() as Promise<T>;
+  }
+
+  return {
+    auth: {
+      me: () => request<unknown>("GET", "auth/me", { requiresOrg: false }),
+      getOrganization: (organizationId: string) =>
+        request<unknown>("GET", `auth/organizations/${organizationId}`, { requiresOrg: false }),
+      createOrganization: (body: unknown) =>
+        request<unknown>("POST", "auth/organizations", { body, requiresOrg: false }),
+      inviteToOrganization: (organizationId: string, body: unknown) =>
+        request<unknown>("POST", `auth/organizations/${organizationId}/invite`, {
+          body,
+          requiresOrg: false,
+        }),
+    },
+    dashboard: {
+      getSummary: () =>
+        request<unknown>("GET", "organizations/:organizationId/dashboard/summary"),
+      getProperty: (propertyId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/dashboard/property/${propertyId}`),
+      getTrends: () =>
+        request<unknown>("GET", "organizations/:organizationId/dashboard/trends"),
+    },
+    properties: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/properties", { params }),
+      get: (propertyId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/properties/${propertyId}`),
+      create: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/properties", { body }),
+      update: (propertyId: string, body: unknown) =>
+        request<unknown>("PUT", `organizations/:organizationId/properties/${propertyId}`, { body }),
+      delete: (propertyId: string) =>
+        request<unknown>("DELETE", `organizations/:organizationId/properties/${propertyId}`),
+      getUploadPhotoUrl: (propertyId: string, body?: unknown) =>
+        request<{ url: string }>("POST", `organizations/:organizationId/properties/${propertyId}/upload-photo`, {
+          body: body ?? {},
+        }),
+    },
+    units: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/units", { params }),
+      get: (unitId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/units/${unitId}`),
+      createAtProperty: (propertyId: string, body: unknown) =>
+        request<unknown>("POST", `organizations/:organizationId/properties/${propertyId}/units`, {
+          body,
+        }),
+      create: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/units", { body }),
+      update: (unitId: string, body: unknown) =>
+        request<unknown>("PUT", `organizations/:organizationId/units/${unitId}`, { body }),
+      delete: (unitId: string) =>
+        request<unknown>("DELETE", `organizations/:organizationId/units/${unitId}`),
+    },
+    tenants: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/tenants", { params }),
+      get: (tenantId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/tenants/${tenantId}`),
+      create: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/tenants", { body }),
+      update: (tenantId: string, body: unknown) =>
+        request<unknown>("PUT", `organizations/:organizationId/tenants/${tenantId}`, { body }),
+      delete: (tenantId: string) =>
+        request<unknown>("DELETE", `organizations/:organizationId/tenants/${tenantId}`),
+    },
+    invoices: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/invoices", { params }),
+      get: (invoiceId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/invoices/${invoiceId}`),
+      generate: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/invoices/generate", { body }),
+    },
+    payments: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/payments", { params }),
+      request: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/payments/request", { body }),
+      reconcile: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/payments/reconcile", { body }),
+    },
+    arrears: {
+      run: (body?: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/arrears/run", {
+          body: body ?? {},
+        }),
+    },
+    maintenance: {
+      list: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/maintenance", { params }),
+      get: (ticketId: string) =>
+        request<unknown>("GET", `organizations/:organizationId/maintenance/${ticketId}`),
+      create: (body: unknown) =>
+        request<unknown>("POST", "organizations/:organizationId/maintenance", { body }),
+      update: (ticketId: string, body: unknown) =>
+        request<unknown>("PUT", `organizations/:organizationId/maintenance/${ticketId}`, { body }),
+      getUploadPhotoUrl: (ticketId: string, body?: unknown) =>
+        request<{ url: string }>(
+          "POST",
+          `organizations/:organizationId/maintenance/${ticketId}/upload-photo`,
+          { body: body ?? {} },
+        ),
+    },
+    reports: {
+      pnl: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/reports/pnl", { params }),
+      arrears: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/reports/arrears", { params }),
+      cashflow: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/reports/cashflow", { params }),
+      comparative: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/reports/comparative", { params }),
+    },
+  };
+}
+
+export type InzuApiClient = ReturnType<typeof createInzuApiClient>;
