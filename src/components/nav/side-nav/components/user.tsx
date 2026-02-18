@@ -1,24 +1,31 @@
-import { ChevronDown } from "lucide-react";
-import Image from "next/image";
+"use client";
+
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 
 export default function User() {
   return (
-    <div className="flex h-16 items-center border-b border-border px-2">
-      <div className="flex w-full items-center justify-between rounded-md px-2 py-1 hover:bg-slate-200 dark:hover:bg-slate-800">
-        <div className="flex items-center">
-          <Image
-            src="/avatar.png"
-            alt="User"
-            className="mr-2 rounded-full"
-            width={36}
-            height={36}
-          />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Name</span>
-            <span className="text-xs text-muted-foreground">Agent Admin</span>
-          </div>
-        </div>
-        <ChevronDown size={16} />
+    <div className="flex h-16 flex-col gap-2 border-b border-border px-2 py-2">
+      <OrganizationSwitcher
+        hidePersonal
+        afterCreateOrganizationUrl="/"
+        afterSelectOrganizationUrl="/"
+        appearance={{
+          elements: {
+            rootBox: "w-full flex justify-center",
+            organizationSwitcherTrigger:
+              "w-full justify-center rounded-md px-2 py-1.5 hover:bg-slate-200 dark:hover:bg-slate-800",
+          },
+        }}
+      />
+      <div className="flex justify-center">
+        <UserButton
+          afterSignOutUrl="/sign-in"
+          appearance={{
+            elements: {
+              avatarBox: "h-9 w-9",
+            },
+          }}
+        />
       </div>
     </div>
   );
