@@ -44,7 +44,7 @@ export default function ReportsPage() {
     setActiveTab(id);
     loadReport(id);
   };
-
+//f
   return (
     <RequireOrganization>
       <Container className="py-6">
