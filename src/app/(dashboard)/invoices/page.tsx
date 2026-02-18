@@ -52,7 +52,7 @@ export default function InvoicesPage() {
         )}
         {!loading && !error && data && data.length > 0 && (
           <ul className="divide-y divide-border rounded-md border border-border">
-            ((data as { id?: string; amount?: number; status?: string }[]) || []).map(
+            {((data as { id?: string; amount?: number; status?: string }[]) || []).map(
               (item) => (
                 <li
                   key={item.id ?? String(item)}
