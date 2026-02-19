@@ -57,7 +57,9 @@ export function useCurrentOrganizationId(): {
           }
         }
 
-        const response = (await api.auth.createOrganization({})) as AuthOrganizationResponse;
+        const response = (await api.auth.createOrganization({
+          name: organization.name ?? organization.slug ?? "Untitled organization",
+        })) as AuthOrganizationResponse;
         const newId = response?._id ?? null;
 
         if (!newId) {
