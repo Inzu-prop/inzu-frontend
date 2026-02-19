@@ -1,8 +1,7 @@
-"use client";
+ "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth, useOrganization } from "@clerk/nextjs";
-import { useOrganization } from "@clerk/nextjs";
 import { useAtomValue } from "jotai";
 import { selectedOrganizationIdAtom } from "@/lib/atoms";
 import { createInzuApiClient } from "@/lib/api/client";
