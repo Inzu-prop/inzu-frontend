@@ -70,7 +70,6 @@ export function useCurrentOrganizationId(): {
         // Verify we have a token before making the request
         const token = await getToken();
         if (!token) {
-          console.warn("[useCurrentOrganizationId] No token available yet");
           if (!cancelled) {
             setMappingLoaded(true);
           }
@@ -83,7 +82,6 @@ export function useCurrentOrganizationId(): {
         const newId = response?.organization?._id ?? null;
 
         if (!newId) {
-          console.warn("[useCurrentOrganizationId] No _id in response:", response);
           if (!cancelled) {
             setMappingLoaded(true);
           }
@@ -101,8 +99,7 @@ export function useCurrentOrganizationId(): {
           map[organization.id] = newId;
           window.localStorage.setItem(INZU_ORG_ID_MAP_STORAGE_KEY, JSON.stringify(map));
         }
-      } catch (error) {
-        console.error("[useCurrentOrganizationId] Failed to ensure Inzu organization:", error);
+      } catch {
         if (!cancelled) {
           setMappingLoaded(true);
         }
