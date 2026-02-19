@@ -7,7 +7,11 @@ import { selectedOrganizationIdAtom } from "@/lib/atoms";
 import { createInzuApiClient } from "@/lib/api/client";
 
 type AuthOrganizationResponse = {
-  _id: string;
+  organization: {
+    _id: string;
+    name: string;
+    [key: string]: unknown;
+  };
 };
 
 const INZU_ORG_ID_MAP_STORAGE_KEY = "inzuOrgIdByClerkOrgId";
@@ -17,7 +21,7 @@ export function useCurrentOrganizationId(): {
   isLoaded: boolean;
 } {
   const { organization, isLoaded } = useOrganization();
-  const { getToken, isLoaded: authIsLoaded, userId } = useAuth();
+  const { getToken, isLoaded: authIsLoaded, userId, sessionId } = useAuth();
   const selectedId = useAtomValue(selectedOrganizationIdAtom);
 
   const [inzuOrganizationId, setInzuOrganizationId] = useState<string | null>(null);
@@ -36,7 +40,7 @@ export function useCurrentOrganizationId(): {
     let cancelled = false;
 
     async function ensureInzuOrganizationId() {
-      if (!authIsLoaded || !userId) {
+      if (!authIsLoaded || !userId || !sessionId) {
         setMappingLoaded(false);
         return;
       }
@@ -66,6 +70,7 @@ export function useCurrentOrganizationId(): {
         // Verify we have a token before making the request
         const token = await getToken();
         if (!token) {
+          console.warn("[useCurrentOrganizationId] No token available yet");
           if (!cancelled) {
             setMappingLoaded(true);
           }
@@ -75,9 +80,10 @@ export function useCurrentOrganizationId(): {
         const response = (await api.auth.createOrganization({
           name: organization.name ?? organization.slug ?? "Untitled organization",
         })) as AuthOrganizationResponse;
-        const newId = response?._id ?? null;
+        const newId = response?.organization?._id ?? null;
 
         if (!newId) {
+          console.warn("[useCurrentOrganizationId] No _id in response:", response);
           if (!cancelled) {
             setMappingLoaded(true);
           }
@@ -95,7 +101,8 @@ export function useCurrentOrganizationId(): {
           map[organization.id] = newId;
           window.localStorage.setItem(INZU_ORG_ID_MAP_STORAGE_KEY, JSON.stringify(map));
         }
-      } catch {
+      } catch (error) {
+        console.error("[useCurrentOrganizationId] Failed to ensure Inzu organization:", error);
         if (!cancelled) {
           setMappingLoaded(true);
         }
@@ -107,7 +114,7 @@ export function useCurrentOrganizationId(): {
     return () => {
       cancelled = true;
     };
-  }, [organization, api, authIsLoaded, userId]);
+  }, [organization, api, authIsLoaded, userId, sessionId, getToken]);
 
   const organizationId =
     selectedId !== null
