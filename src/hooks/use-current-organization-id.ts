@@ -17,7 +17,7 @@ export function useCurrentOrganizationId(): {
   isLoaded: boolean;
 } {
   const { organization, isLoaded } = useOrganization();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authIsLoaded, userId } = useAuth();
   const selectedId = useAtomValue(selectedOrganizationIdAtom);
 
   const [inzuOrganizationId, setInzuOrganizationId] = useState<string | null>(null);
@@ -36,6 +36,11 @@ export function useCurrentOrganizationId(): {
     let cancelled = false;
 
     async function ensureInzuOrganizationId() {
+      if (!authIsLoaded || !userId) {
+        setMappingLoaded(false);
+        return;
+      }
+
       if (!organization) {
         setInzuOrganizationId(null);
         setMappingLoaded(true);
@@ -43,6 +48,7 @@ export function useCurrentOrganizationId(): {
       }
 
       try {
+        // Check if we already have the mapping stored
         if (typeof window !== "undefined") {
           const raw = window.localStorage.getItem(INZU_ORG_ID_MAP_STORAGE_KEY);
           const map: Record<string, string> = raw ? JSON.parse(raw) : {};
@@ -55,6 +61,15 @@ export function useCurrentOrganizationId(): {
             }
             return;
           }
+        }
+
+        // Verify we have a token before making the request
+        const token = await getToken();
+        if (!token) {
+          if (!cancelled) {
+            setMappingLoaded(true);
+          }
+          return;
         }
 
         const response = (await api.auth.createOrganization({
@@ -92,7 +107,7 @@ export function useCurrentOrganizationId(): {
     return () => {
       cancelled = true;
     };
-  }, [organization, api]);
+  }, [organization, api, authIsLoaded, userId]);
 
   const organizationId =
     selectedId !== null
@@ -101,6 +116,6 @@ export function useCurrentOrganizationId(): {
 
   return {
     organizationId,
-    isLoaded: isLoaded && (!organization || mappingLoaded),
+    isLoaded: authIsLoaded && isLoaded && (!organization || mappingLoaded),
   };
 }
