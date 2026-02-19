@@ -1,36 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
+import type { PropertyListItem } from "@/lib/api";
+
+const LIST_TIMEOUT_MS = 15000;
 
 export default function PropertiesPage() {
   const api = useInzuApi();
-  const [data, setData] = useState<unknown[] | null>(null);
+  const [data, setData] = useState<PropertyListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const timedOutRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    timedOutRef.current = false;
     setLoading(true);
     setError(null);
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        timedOutRef.current = true;
+        setError("Request timed out. Check your connection and try again.");
+        setLoading(false);
+      }
+    }, LIST_TIMEOUT_MS);
     api.properties
       .list()
       .then((res) => {
-        if (!cancelled) setData(Array.isArray(res) ? res : []);
+        if (!cancelled && !timedOutRef.current)
+          setData(res.properties ?? []);
       })
       .catch((err) => {
-        if (!cancelled)
+        if (!cancelled && !timedOutRef.current)
           setError(err instanceof ApiError ? err.message : String(err));
       })
       .finally(() => {
+        clearTimeout(timeoutId);
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [api.properties]);
 
@@ -39,7 +55,9 @@ export default function PropertiesPage() {
       <Container className="py-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Properties</h2>
-          <Button size="sm">Add property</Button>
+          <Button size="sm" asChild>
+            <Link href="/properties/new">Add property</Link>
+          </Button>
         </div>
         {loading && <p className="text-muted-foreground">Loading…</p>}
         {error && (
@@ -52,25 +70,36 @@ export default function PropertiesPage() {
         )}
         {!loading && !error && data && data.length > 0 && (
           <ul className="divide-y divide-border rounded-md border border-border">
-            {(data as { id?: string; name?: string; address?: string }[]).map(
-              (item) => (
+            {data.map((item) => {
+              const addr = item.address;
+              const addressLine = [addr.street, addr.city, addr.state, addr.country]
+                .filter(Boolean)
+                .join(", ");
+              return (
                 <li
-                  key={item.id ?? String(item)}
+                  key={item._id}
                   className="flex items-center justify-between px-4 py-3"
                 >
                   <div>
-                    <span className="font-medium">
-                      {(item as { name?: string }).name ?? "Property"}
+                    <span className="font-medium">{item.name}</span>
+                    <span className="ml-2 text-muted-foreground">
+                      {item.type}
                     </span>
-                    {(item as { address?: string }).address && (
-                      <span className="ml-2 text-muted-foreground">
-                        {(item as { address?: string }).address}
+                    {addressLine && (
+                      <span className="ml-2 block text-sm text-muted-foreground">
+                        {addressLine}
                       </span>
                     )}
                   </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{item.status}</span>
+                    {item.totalUnits != null && (
+                      <span>{item.totalUnits} units</span>
+                    )}
+                  </div>
                 </li>
-              ),
-            )}
+              );
+            })}
           </ul>
         )}
       </Container>

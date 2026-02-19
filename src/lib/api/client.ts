@@ -1,3 +1,12 @@
+import type {
+  CreatePropertyBody,
+  PropertiesListResponse,
+  PropertyCreateResponse,
+  PropertyDeleteResponse,
+  PropertyGetResponse,
+  PropertyUploadPhotoResponse,
+  UpdatePropertyBody,
+} from "./properties";
 import { ApiError } from "./errors";
 
 function getBaseUrl(): string {
@@ -95,19 +104,25 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     properties: {
       list: (params?: Record<string, string>) =>
-        request<unknown>("GET", "organizations/:organizationId/properties", { params }),
-      get: (propertyId: string) =>
-        request<unknown>("GET", `organizations/:organizationId/properties/${propertyId}`),
-      create: (body: unknown) =>
-        request<unknown>("POST", "organizations/:organizationId/properties", { body }),
-      update: (propertyId: string, body: unknown) =>
-        request<unknown>("PUT", `organizations/:organizationId/properties/${propertyId}`, { body }),
-      delete: (propertyId: string) =>
-        request<unknown>("DELETE", `organizations/:organizationId/properties/${propertyId}`),
-      getUploadPhotoUrl: (propertyId: string, body?: unknown) =>
-        request<{ url: string }>("POST", `organizations/:organizationId/properties/${propertyId}/upload-photo`, {
-          body: body ?? {},
+        request<PropertiesListResponse>("GET", "organizations/:organizationId/properties", {
+          params,
         }),
+      get: (propertyId: string) =>
+        request<PropertyGetResponse>("GET", `organizations/:organizationId/properties/${propertyId}`),
+      create: (body: CreatePropertyBody) =>
+        request<PropertyCreateResponse>("POST", "organizations/:organizationId/properties", { body }),
+      update: (propertyId: string, body: UpdatePropertyBody) =>
+        request<PropertyGetResponse>("PUT", `organizations/:organizationId/properties/${propertyId}`, {
+          body,
+        }),
+      delete: (propertyId: string) =>
+        request<PropertyDeleteResponse>("DELETE", `organizations/:organizationId/properties/${propertyId}`),
+      getUploadPhotoUrl: (propertyId: string, body?: { fileName: string; contentType?: string }) =>
+        request<PropertyUploadPhotoResponse>(
+          "POST",
+          `organizations/:organizationId/properties/${propertyId}/upload-photo`,
+          { body: body ?? { fileName: "" } },
+        ),
     },
     units: {
       list: (params?: Record<string, string>) =>
