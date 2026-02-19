@@ -67,6 +67,10 @@ export function useCurrentOrganizationId(): {
           }
         }
 
+        // Small delay to ensure Clerk session is fully established
+        // This helps avoid race conditions where token isn't ready yet
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Verify we have a token before making the request
         const token = await getToken();
         if (!token) {
