@@ -50,7 +50,7 @@ export interface PropertyDocument {
   publicUrl: string;
 }
 
-export interface Property extends PropertyListItem {
+export interface Property extends Omit<PropertyListItem, "photos"> {
   organizationId: string;
   yearBuilt?: number;
   totalFloors?: number;
