@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
@@ -31,7 +31,7 @@ function normalizeUnitsResponse(res: unknown): Unit[] {
   return [];
 }
 
-export default function UnitsPage() {
+function UnitsPageContent() {
   const api = useInzuApi();
   const searchParams = useSearchParams();
   const propertyIdParam = searchParams.get("propertyId") ?? undefined;
@@ -205,5 +205,24 @@ export default function UnitsPage() {
         )}
       </Container>
     </RequireOrganization>
+  );
+}
+
+export default function UnitsPage() {
+  return (
+    <Suspense
+      fallback={
+        <RequireOrganization>
+          <Container className="py-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Units</h2>
+            </div>
+            <p className="text-muted-foreground">Loading…</p>
+          </Container>
+        </RequireOrganization>
+      }
+    >
+      <UnitsPageContent />
+    </Suspense>
   );
 }
