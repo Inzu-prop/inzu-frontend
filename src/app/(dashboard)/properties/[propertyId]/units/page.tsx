@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { Unit, UnitType } from "@/lib/api";
 import { UNIT_TYPES } from "@/lib/api";
@@ -34,6 +35,7 @@ function normalizeUnitsResponse(res: unknown): Unit[] {
 export default function PropertyUnitsPage() {
   const params = useParams();
   const router = useRouter();
+  const { organizationId } = useCurrentOrganizationId();
   const propertyId = params.propertyId as string;
   const api = useInzuApi();
 
@@ -43,7 +45,7 @@ export default function PropertyUnitsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUnits = useCallback(() => {
-    if (!propertyId) return;
+    if (!propertyId || !organizationId) return;
     setLoading(true);
     setError(null);
     Promise.all([
@@ -59,11 +61,15 @@ export default function PropertyUnitsPage() {
         setError(err instanceof ApiError ? err.message : String(err));
       })
       .finally(() => setLoading(false));
-  }, [api.units, api.properties, propertyId]);
+  }, [api.units, api.properties, organizationId, propertyId]);
 
   useEffect(() => {
-    fetchUnits();
-  }, [fetchUnits]);
+    if (organizationId) {
+      fetchUnits();
+    } else {
+      setLoading(false);
+    }
+  }, [organizationId, fetchUnits]);
 
   const [showBulk, setShowBulk] = useState(false);
   const [showSingle, setShowSingle] = useState(false);
