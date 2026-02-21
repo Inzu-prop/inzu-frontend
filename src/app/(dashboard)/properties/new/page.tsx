@@ -82,8 +82,13 @@ export default function NewPropertyPage() {
     };
     api.properties
       .create(body)
-      .then(() => {
-        router.push("/properties");
+      .then((res) => {
+        const id = res?.property?._id;
+        if (id) {
+          router.push(`/properties/${id}/units`);
+        } else {
+          router.push("/properties");
+        }
       })
       .catch((err) => {
         setError(err instanceof ApiError ? err.message : String(err));
@@ -243,8 +248,11 @@ export default function NewPropertyPage() {
             </div>
             <div>
               <label htmlFor="totalUnits" className="mb-1 block text-sm font-medium">
-                Total units
+                Total units (capacity only)
               </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                For display and reports. Add actual units on the property&apos;s Units page after saving.
+              </p>
               <input
                 id="totalUnits"
                 type="number"

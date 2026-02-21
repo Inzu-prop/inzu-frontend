@@ -80,8 +80,13 @@ export default function PropertiesPage() {
                   key={item._id}
                   className="flex items-center justify-between px-4 py-3"
                 >
-                  <div>
-                    <span className="font-medium">{item.name}</span>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/properties/${item._id}/units`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {item.name}
+                    </Link>
                     <span className="ml-2 text-muted-foreground">
                       {item.type}
                     </span>
@@ -91,11 +96,16 @@ export default function PropertiesPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
                     <span>{item.status}</span>
                     {item.totalUnits != null && (
                       <span>{item.totalUnits} units</span>
                     )}
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/properties/${item._id}/units`}>
+                        Units
+                      </Link>
+                    </Button>
                   </div>
                 </li>
               );

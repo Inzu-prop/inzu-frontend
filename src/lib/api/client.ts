@@ -7,6 +7,12 @@ import type {
   PropertyUploadPhotoResponse,
   UpdatePropertyBody,
 } from "./properties";
+import type {
+  BulkCreateUnitsBody,
+  BulkCreateUnitsResponse,
+  CreateUnitBody,
+  Unit,
+} from "./units";
 import { ApiError } from "./errors";
 
 function getBaseUrl(): string {
@@ -126,19 +132,27 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     units: {
       list: (params?: Record<string, string>) =>
-        request<unknown>("GET", "organizations/:organizationId/units", { params }),
+        request<Unit[]>("GET", "organizations/:organizationId/units", { params }),
       get: (unitId: string) =>
-        request<unknown>("GET", `organizations/:organizationId/units/${unitId}`),
-      createAtProperty: (propertyId: string, body: unknown) =>
-        request<unknown>("POST", `organizations/:organizationId/properties/${propertyId}/units`, {
-          body,
-        }),
-      create: (body: unknown) =>
-        request<unknown>("POST", "organizations/:organizationId/units", { body }),
-      update: (unitId: string, body: unknown) =>
-        request<unknown>("PUT", `organizations/:organizationId/units/${unitId}`, { body }),
+        request<Unit>("GET", `organizations/:organizationId/units/${unitId}`),
+      createAtProperty: (propertyId: string, body: CreateUnitBody) =>
+        request<Unit>(
+          "POST",
+          `organizations/:organizationId/properties/${propertyId}/units`,
+          { body },
+        ),
+      createBulk: (propertyId: string, body: BulkCreateUnitsBody) =>
+        request<BulkCreateUnitsResponse>(
+          "POST",
+          `organizations/:organizationId/properties/${propertyId}/units/bulk`,
+          { body },
+        ),
+      create: (body: CreateUnitBody & { propertyId?: string }) =>
+        request<Unit>("POST", "organizations/:organizationId/units", { body }),
+      update: (unitId: string, body: Partial<CreateUnitBody>) =>
+        request<Unit>("PUT", `organizations/:organizationId/units/${unitId}`, { body }),
       delete: (unitId: string) =>
-        request<unknown>("DELETE", `organizations/:organizationId/units/${unitId}`),
+        request<void>("DELETE", `organizations/:organizationId/units/${unitId}`),
     },
     tenants: {
       list: (params?: Record<string, string>) =>
