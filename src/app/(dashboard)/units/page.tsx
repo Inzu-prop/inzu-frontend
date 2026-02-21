@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { Unit, UnitType } from "@/lib/api";
 import { UNIT_TYPES } from "@/lib/api";
@@ -32,6 +33,7 @@ function normalizeUnitsResponse(res: unknown): Unit[] {
 }
 
 function UnitsPageContent() {
+  const { organizationId } = useCurrentOrganizationId();
   const api = useInzuApi();
   const searchParams = useSearchParams();
   const propertyIdParam = searchParams.get("propertyId") ?? undefined;
@@ -41,6 +43,7 @@ function UnitsPageContent() {
   const [loading, setLoading] = useState(true);
 
   const fetchUnits = useCallback(() => {
+    if (!organizationId) return;
     setLoading(true);
     setError(null);
     const params = propertyIdParam ? { propertyId: propertyIdParam } : undefined;
@@ -49,11 +52,15 @@ function UnitsPageContent() {
       .then((res) => setData(normalizeUnitsResponse(res)))
       .catch((err) => setError(err instanceof ApiError ? err.message : String(err)))
       .finally(() => setLoading(false));
-  }, [api.units, propertyIdParam]);
+  }, [api.units, organizationId, propertyIdParam]);
 
   useEffect(() => {
-    fetchUnits();
-  }, [fetchUnits]);
+    if (organizationId) {
+      fetchUnits();
+    } else {
+      setLoading(false);
+    }
+  }, [organizationId, fetchUnits]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRent, setEditRent] = useState("");
