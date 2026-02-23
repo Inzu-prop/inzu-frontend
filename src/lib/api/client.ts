@@ -21,6 +21,18 @@ export type SendPortalInviteResponse = {
   alreadyHasAccess?: boolean;
 };
 
+export type AuthMeResponse = {
+  user?: { role?: string; [key: string]: unknown };
+  organizations?: { _id: string; [key: string]: unknown }[];
+  tenant?: {
+    _id: string;
+    organizationId: string;
+    status?: string;
+    unitId?: string;
+    [key: string]: unknown;
+  } | null;
+};
+
 function getBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (!url) {
@@ -95,7 +107,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
 
   return {
     auth: {
-      me: () => request<unknown>("GET", "auth/me", { requiresOrg: false }),
+      me: () => request<AuthMeResponse>("GET", "auth/me", { requiresOrg: false }),
       getOrganization: (organizationId: string) =>
         request<unknown>("GET", `auth/organizations/${organizationId}`, { requiresOrg: false }),
       createOrganization: (body: unknown) =>
