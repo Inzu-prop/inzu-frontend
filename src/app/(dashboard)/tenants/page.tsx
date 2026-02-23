@@ -37,7 +37,8 @@ export default function TenantsPage() {
   );
   const [redirectUrl, setRedirectUrl] = useState("");
   const [addTenantOpen, setAddTenantOpen] = useState(false);
-  const [addTenantName, setAddTenantName] = useState("");
+  const [addTenantFirstName, setAddTenantFirstName] = useState("");
+  const [addTenantLastName, setAddTenantLastName] = useState("");
   const [addTenantEmail, setAddTenantEmail] = useState("");
   const [addTenantSubmitting, setAddTenantSubmitting] = useState(false);
   const [addTenantError, setAddTenantError] = useState<string | null>(null);
@@ -60,13 +61,23 @@ export default function TenantsPage() {
 
   const handleAddTenant = (e: React.FormEvent) => {
     e.preventDefault();
+    const firstName = addTenantFirstName.trim();
+    if (!firstName) {
+      setAddTenantError("First name is required");
+      return;
+    }
     setAddTenantError(null);
     setAddTenantSubmitting(true);
     api.tenants
-      .create({ name: addTenantName.trim() || undefined, email: addTenantEmail.trim() || undefined })
+      .create({
+        firstName,
+        lastName: addTenantLastName.trim() || undefined,
+        email: addTenantEmail.trim() || undefined,
+      })
       .then(() => {
         setAddTenantOpen(false);
-        setAddTenantName("");
+        setAddTenantFirstName("");
+        setAddTenantLastName("");
         setAddTenantEmail("");
         fetchTenants();
       })
@@ -132,13 +143,24 @@ export default function TenantsPage() {
               <h3 className="mb-3 font-medium">Add tenant</h3>
               <form onSubmit={handleAddTenant}>
                 <label className="mb-1 block text-sm font-medium">
-                  Name
+                  First name <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Tenant name"
-                  value={addTenantName}
-                  onChange={(e) => setAddTenantName(e.target.value)}
+                  placeholder="First name"
+                  value={addTenantFirstName}
+                  onChange={(e) => setAddTenantFirstName(e.target.value)}
+                  className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  required
+                />
+                <label className="mb-1 block text-sm font-medium">
+                  Last name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Last name"
+                  value={addTenantLastName}
+                  onChange={(e) => setAddTenantLastName(e.target.value)}
                   className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <label className="mb-1 block text-sm font-medium">
