@@ -83,7 +83,12 @@ export default function TenantsPage() {
     setError(null);
     api.tenants
       .list()
-      .then((res) => setData(normalizeTenantsResponse(res)))
+      .then((res) => {
+        console.log("[tenants/list] raw response:", res);
+        const normalized = normalizeTenantsResponse(res);
+        console.log("[tenants/list] normalized:", normalized);
+        setData(normalized);
+      })
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : String(err)),
       )
