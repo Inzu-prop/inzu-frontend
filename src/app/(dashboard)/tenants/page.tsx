@@ -83,10 +83,8 @@ export default function TenantsPage() {
     if (!tenantId) return;
     setInvitingTenantId(tenantId);
     setInviteMessage(null);
-    const body =
-      customRedirectUrl?.trim() !== ""
-        ? { redirectUrl: customRedirectUrl.trim() }
-        : undefined;
+    const url = customRedirectUrl?.trim();
+    const body = url ? { redirectUrl: url } : undefined;
     api.tenants
       .sendPortalInvite(tenantId, body)
       .then((res) => {
