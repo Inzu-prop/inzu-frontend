@@ -12,11 +12,45 @@ import {
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 
-type TenantItem = { id?: string; name?: string; email?: string };
+type TenantItem = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+};
 
 function normalizeTenantsResponse(res: unknown): TenantItem[] {
-  if (!res || !Array.isArray(res)) return [];
-  return res as TenantItem[];
+  let list: unknown[] = [];
+  if (Array.isArray(res)) {
+    list = res;
+  } else if (
+    res &&
+    typeof res === "object" &&
+    "tenants" in res &&
+    Array.isArray((res as { tenants: unknown }).tenants)
+  ) {
+    list = (res as { tenants: unknown[] }).tenants;
+  } else if (
+    res &&
+    typeof res === "object" &&
+    "data" in res &&
+    Array.isArray((res as { data: unknown }).data)
+  ) {
+    list = (res as { data: unknown[] }).data;
+  }
+  return list.map((item) => {
+    const t = item as Record<string, unknown>;
+    return {
+      ...t,
+      id: (t.id ?? t._id) as string | undefined,
+      name:
+        (t.name as string | undefined) ??
+        [t.firstName, t.lastName].filter(Boolean).join(" ").trim() ||
+        undefined,
+    } as TenantItem;
+  });
 }
 
 export default function TenantsPage() {
