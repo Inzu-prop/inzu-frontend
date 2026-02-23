@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
@@ -34,7 +34,6 @@ function normalizeUnitsResponse(res: unknown): Unit[] {
 
 export default function PropertyUnitsPage() {
   const params = useParams();
-  const router = useRouter();
   const { organizationId } = useCurrentOrganizationId();
   const propertyId = params.propertyId as string;
   const api = useInzuApi();
