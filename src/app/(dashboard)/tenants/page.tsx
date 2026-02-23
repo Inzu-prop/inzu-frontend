@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
@@ -36,27 +36,47 @@ export default function TenantsPage() {
     null,
   );
   const [redirectUrl, setRedirectUrl] = useState("");
+  const [addTenantOpen, setAddTenantOpen] = useState(false);
+  const [addTenantName, setAddTenantName] = useState("");
+  const [addTenantEmail, setAddTenantEmail] = useState("");
+  const [addTenantSubmitting, setAddTenantSubmitting] = useState(false);
+  const [addTenantError, setAddTenantError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchTenants = useCallback(() => {
     setLoading(true);
     setError(null);
     api.tenants
       .list()
-      .then((res) => {
-        if (!cancelled) setData(normalizeTenantsResponse(res));
+      .then((res) => setData(normalizeTenantsResponse(res)))
+      .catch((err) =>
+        setError(err instanceof ApiError ? err.message : String(err)),
+      )
+      .finally(() => setLoading(false));
+  }, [api.tenants]);
+
+  useEffect(() => {
+    fetchTenants();
+  }, [fetchTenants]);
+
+  const handleAddTenant = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddTenantError(null);
+    setAddTenantSubmitting(true);
+    api.tenants
+      .create({ name: addTenantName.trim() || undefined, email: addTenantEmail.trim() || undefined })
+      .then(() => {
+        setAddTenantOpen(false);
+        setAddTenantName("");
+        setAddTenantEmail("");
+        fetchTenants();
       })
       .catch((err) => {
-        if (!cancelled)
-          setError(err instanceof ApiError ? err.message : String(err));
+        setAddTenantError(
+          err instanceof ApiError ? err.message : String(err),
+        );
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [api.tenants]);
+      .finally(() => setAddTenantSubmitting(false));
+  };
 
   const sendPortalInvite = (tenant: TenantItem, customRedirectUrl?: string) => {
     const tenantId = tenant.id;
@@ -100,7 +120,55 @@ export default function TenantsPage() {
       <Container className="py-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Tenants</h2>
-          <Button size="sm">Add tenant</Button>
+          <Popover
+            open={addTenantOpen}
+            onOpenChange={(open) => {
+              setAddTenantOpen(open);
+              if (!open) setAddTenantError(null);
+            }}
+          >
+            <PopoverTrigger asChild>
+              <Button size="sm">Add tenant</Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80">
+              <h3 className="mb-3 font-medium">Add tenant</h3>
+              <form onSubmit={handleAddTenant}>
+                <label className="mb-1 block text-sm font-medium">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Tenant name"
+                  value={addTenantName}
+                  onChange={(e) => setAddTenantName(e.target.value)}
+                  className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <label className="mb-1 block text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="tenant@example.com"
+                  value={addTenantEmail}
+                  onChange={(e) => setAddTenantEmail(e.target.value)}
+                  className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                {addTenantError && (
+                  <p className="mb-2 text-sm text-destructive" role="alert">
+                    {addTenantError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="w-full"
+                  disabled={addTenantSubmitting}
+                >
+                  {addTenantSubmitting ? "Adding…" : "Add tenant"}
+                </Button>
+              </form>
+            </PopoverContent>
+          </Popover>
         </div>
         {inviteMessage && (
           <p
