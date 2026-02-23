@@ -40,6 +40,7 @@ export default function TenantsPage() {
   const [addTenantFirstName, setAddTenantFirstName] = useState("");
   const [addTenantLastName, setAddTenantLastName] = useState("");
   const [addTenantEmail, setAddTenantEmail] = useState("");
+  const [addTenantPhone, setAddTenantPhone] = useState("");
   const [addTenantSubmitting, setAddTenantSubmitting] = useState(false);
   const [addTenantError, setAddTenantError] = useState<string | null>(null);
 
@@ -62,8 +63,13 @@ export default function TenantsPage() {
   const handleAddTenant = (e: React.FormEvent) => {
     e.preventDefault();
     const firstName = addTenantFirstName.trim();
+    const phoneNumber = addTenantPhone.trim();
     if (!firstName) {
       setAddTenantError("First name is required");
+      return;
+    }
+    if (!phoneNumber) {
+      setAddTenantError("Phone number is required");
       return;
     }
     setAddTenantError(null);
@@ -73,12 +79,14 @@ export default function TenantsPage() {
         firstName,
         lastName: addTenantLastName.trim() || undefined,
         email: addTenantEmail.trim() || undefined,
+        phoneNumber,
       })
       .then(() => {
         setAddTenantOpen(false);
         setAddTenantFirstName("");
         setAddTenantLastName("");
         setAddTenantEmail("");
+        setAddTenantPhone("");
         fetchTenants();
       })
       .catch((err) => {
@@ -162,6 +170,17 @@ export default function TenantsPage() {
                   value={addTenantLastName}
                   onChange={(e) => setAddTenantLastName(e.target.value)}
                   className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <label className="mb-1 block text-sm font-medium">
+                  Phone number <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder="+254 700 000 000"
+                  value={addTenantPhone}
+                  onChange={(e) => setAddTenantPhone(e.target.value)}
+                  className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  required
                 />
                 <label className="mb-1 block text-sm font-medium">
                   Email
