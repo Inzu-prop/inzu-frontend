@@ -47,8 +47,7 @@ function normalizeTenantsResponse(res: unknown): TenantItem[] {
       id: (t.id ?? t._id) as string | undefined,
       name:
         (t.name as string | undefined) ??
-        [t.firstName, t.lastName].filter(Boolean).join(" ").trim() ||
-        undefined,
+        ([t.firstName, t.lastName].filter(Boolean).join(" ").trim() || undefined),
     } as TenantItem;
   });
 }
