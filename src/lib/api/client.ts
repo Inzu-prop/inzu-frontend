@@ -15,6 +15,12 @@ import type {
 } from "./units";
 import { ApiError } from "./errors";
 
+export type SendPortalInviteResponse = {
+  success: true;
+  message: string;
+  alreadyHasAccess?: boolean;
+};
+
 function getBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (!url) {
@@ -165,7 +171,13 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         request<unknown>("PUT", `organizations/:organizationId/tenants/${tenantId}`, { body }),
       delete: (tenantId: string) =>
         request<unknown>("DELETE", `organizations/:organizationId/tenants/${tenantId}`),
-    }, //d
+      sendPortalInvite: (tenantId: string, body?: { redirectUrl?: string }) =>
+        request<SendPortalInviteResponse>(
+          "POST",
+          `organizations/:organizationId/tenants/${tenantId}/send-portal-invite`,
+          { body: body ?? {} },
+        ),
+    },
     invoices: {
       list: (params?: Record<string, string>) =>
         request<unknown>("GET", "organizations/:organizationId/invoices", { params }),
