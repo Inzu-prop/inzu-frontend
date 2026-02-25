@@ -68,29 +68,37 @@ export function TenantPortalShell({
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-border bg-background">
-        <Container className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <Link href="/tenant" className="text-xl font-semibold tracking-tight">
+        <Container className="flex h-16 w-full items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
+            <Link
+              href="/tenant"
+              className="shrink-0 text-xl font-semibold tracking-tight"
+            >
               INZU
             </Link>
-            <span className="hidden border-l border-border pl-4 text-sm text-muted-foreground sm:inline">
+            <span className="hidden shrink-0 border-l border-border pl-4 text-sm text-muted-foreground sm:inline">
               Tenant portal
             </span>
-            <nav className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
+            <nav className="hidden shrink-0 items-center gap-4 text-sm text-muted-foreground sm:flex">
               <Link
                 href="/tenant"
-                className="rounded-md px-2 py-1 text-foreground"
+                className="rounded-md px-2 py-1.5 text-foreground hover:bg-muted"
               >
                 Home
               </Link>
             </nav>
-            <span className="hidden text-sm text-muted-foreground md:inline">
+            <span className="hidden min-w-0 truncate text-sm text-muted-foreground md:inline">
               {tenantName} · {organizationName}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <UserButton afterSignOutUrl="/sign-in" />
+            <UserButton
+              afterSignOutUrl="/sign-in"
+              appearance={{
+                elements: { avatarBox: "h-8 w-8" },
+              }}
+            />
           </div>
         </Container>
       </header>
