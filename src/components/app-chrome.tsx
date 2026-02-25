@@ -16,7 +16,11 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   }
 
   if (!loading && isTenantUser) {
-    return <div className="flex min-h-[100dvh] w-full">{children}</div>;
+    return (
+      <div className="flex min-h-[100dvh] w-full flex-col">
+        {children}
+      </div>
+    );
   }
 
   return (
