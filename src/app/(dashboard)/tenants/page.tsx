@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 
@@ -54,6 +55,7 @@ function normalizeTenantsResponse(res: unknown): TenantItem[] {
 
 export default function TenantsPage() {
   const api = useInzuApi();
+  const { organizationId } = useCurrentOrganizationId();
   const [data, setData] = useState<TenantItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,10 @@ export default function TenantsPage() {
   const [addTenantError, setAddTenantError] = useState<string | null>(null);
 
   const fetchTenants = useCallback(() => {
+    if (!organizationId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     api.tenants
@@ -87,11 +93,15 @@ export default function TenantsPage() {
         setError(err instanceof ApiError ? err.message : String(err)),
       )
       .finally(() => setLoading(false));
-  }, [api.tenants]);
+  }, [api.tenants, organizationId]);
 
   useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
+    if (organizationId) {
+      fetchTenants();
+    } else {
+      setLoading(false);
+    }
+  }, [organizationId, fetchTenants]);
 
   const handleAddTenant = (e: React.FormEvent) => {
     e.preventDefault();
