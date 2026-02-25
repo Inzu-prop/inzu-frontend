@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 import Container from "@/components/container";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTenantMe } from "@/contexts/tenant-me-context";
@@ -87,7 +88,10 @@ export function TenantPortalShell({
               {tenantName} · {organizationName}
             </span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/sign-in" />
+          </div>
         </Container>
       </header>
       <main className="bg-background">{children}</main>
