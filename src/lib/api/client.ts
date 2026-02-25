@@ -29,6 +29,9 @@ export type AuthMeResponse = {
     organizationId: string;
     status?: string;
     unitId?: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
     [key: string]: unknown;
   } | null;
 };
