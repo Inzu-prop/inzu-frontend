@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
+import type { Unit } from "@/lib/api";
 import { ApiError } from "@/lib/api";
 
 type TenantItem = {
@@ -20,7 +21,23 @@ type TenantItem = {
   firstName?: string;
   lastName?: string;
   email?: string;
+   unitId?: string;
+   propertyId?: string;
+   monthlyRent?: number;
 };
+
+function normalizeUnitsResponse(res: unknown): Unit[] {
+  if (Array.isArray(res)) return res as Unit[];
+  if (
+    res &&
+    typeof res === "object" &&
+    "units" in res &&
+    Array.isArray((res as { units: unknown }).units)
+  ) {
+    return (res as { units: Unit[] }).units;
+  }
+  return [];
+}
 
 function normalizeTenantsResponse(res: unknown): TenantItem[] {
   let list: unknown[] = [];
@@ -78,6 +95,10 @@ export default function TenantsPage() {
   const [addTenantPhone, setAddTenantPhone] = useState("");
   const [addTenantSubmitting, setAddTenantSubmitting] = useState(false);
   const [addTenantError, setAddTenantError] = useState<string | null>(null);
+  const [unitsById, setUnitsById] = useState<Record<string, Unit>>({});
+  const [assignTenantId, setAssignTenantId] = useState<string | null>(null);
+  const [assignSelectedUnitId, setAssignSelectedUnitId] = useState<string>("");
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
 
   const fetchTenants = useCallback(() => {
     if (!organizationId) {
@@ -102,6 +123,23 @@ export default function TenantsPage() {
       setLoading(false);
     }
   }, [organizationId, fetchTenants]);
+
+  useEffect(() => {
+    if (!organizationId) return;
+    api.units
+      .list()
+      .then((res) => {
+        const units = normalizeUnitsResponse(res);
+        const map: Record<string, Unit> = {};
+        for (const u of units) {
+          map[u._id] = u;
+        }
+        setUnitsById(map);
+      })
+      .catch(() => {
+        // Ignore unit loading errors for now; assignment UI will just have no options
+      });
+  }, [api.units, organizationId]);
 
   const handleAddTenant = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +211,36 @@ export default function TenantsPage() {
         });
       })
       .finally(() => setInvitingTenantId(null));
+  };
+
+  const handleOpenAssignUnit = (tenant: TenantItem) => {
+    const tenantId = tenant.id ?? tenant._id;
+    if (!tenantId) return;
+    const currentUnitId = tenant.unitId ?? "";
+    setAssignTenantId(tenantId);
+    setAssignSelectedUnitId(currentUnitId);
+  };
+
+  const handleSaveAssignUnit = () => {
+    if (!assignTenantId) return;
+    setAssignSubmitting(true);
+    const body: { unitId: string | null } = {
+      unitId: assignSelectedUnitId || null,
+    };
+    api.tenants
+      .update(assignTenantId, body)
+      .then(() => {
+        setAssignTenantId(null);
+        setAssignSelectedUnitId("");
+        fetchTenants();
+      })
+      .catch((err) => {
+        setInviteMessage({
+          type: "error",
+          text: err instanceof ApiError ? err.message : String(err),
+        });
+      })
+      .finally(() => setAssignSubmitting(false));
   };
 
   return (
@@ -279,6 +347,8 @@ export default function TenantsPage() {
               const tenantId = item.id ?? String(item);
               const hasAccess = tenantIdsWithAccess.has(tenantId);
               const isInviting = invitingTenantId === tenantId;
+              const tenantUnitId = item.unitId;
+              const assignedUnit = tenantUnitId ? unitsById[tenantUnitId] : undefined;
               return (
                 <li
                   key={tenantId}
@@ -293,8 +363,60 @@ export default function TenantsPage() {
                         {item.email}
                       </span>
                     )}
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {assignedUnit
+                        ? `Unit ${assignedUnit.unitNumber}`
+                        : "Unassigned"}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Popover
+                      open={assignTenantId === tenantId}
+                      onOpenChange={(open) => {
+                        if (open) {
+                          handleOpenAssignUnit(item);
+                        } else {
+                          setAssignTenantId(null);
+                          setAssignSelectedUnitId("");
+                        }
+                      }}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={assignSubmitting}>
+                          {assignedUnit ? "Change unit" : "Assign unit"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-80">
+                        <p className="mb-2 text-sm text-muted-foreground">
+                          Assign this tenant to a unit. Setting it to
+                          &ldquo;Unassigned&rdquo; will clear their unit.
+                        </p>
+                        <label className="mb-1 block text-sm font-medium">
+                          Unit
+                        </label>
+                        <select
+                          value={assignSelectedUnitId}
+                          onChange={(e) => setAssignSelectedUnitId(e.target.value)}
+                          className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <option value="">Unassigned (no unit)</option>
+                          {Object.values(unitsById).map((u) => (
+                            <option key={u._id} value={u._id}>
+                              {`Unit ${u.unitNumber}`}
+                              {u.status === "OCCUPIED" ? " (occupied)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          disabled={assignSubmitting}
+                          onClick={handleSaveAssignUnit}
+                        >
+                          {assignSubmitting ? "Saving…" : "Save"}
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
                     {hasAccess ? (
                       <span className="text-sm text-muted-foreground">
                         Already has portal access
