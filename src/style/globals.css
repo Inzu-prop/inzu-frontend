@@ -11,25 +11,32 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 225 100% 50%;
+    /* Inzu theme – light mode */
+    --primary: 140 25% 26%; /* #32533D */
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 126 20% 64%; /* #90B494 */
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 126 15% 85%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 25 33% 39%; /* #825D42 */
+    --accent-foreground: 210 40% 98%;
+    /* Inzu custom palette tokens (HSL, used via hsl(var(--token))) */
+    --inzu-primary: 140 25% 26%; /* #32533D */
+    --inzu-primary-soft: 126 20% 64%; /* #90B494 */
+    --inzu-bg-dark: 106 50% 10%; /* #13270D */
+    --inzu-accent: 25 33% 39%; /* #825D42 */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 94.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Charts aligned with Inzu palette */
+    --chart-1: 140 25% 26%; /* primary */
+    --chart-2: 126 20% 64%; /* primary soft */
+    --chart-3: 106 50% 10%; /* dark green */
+    --chart-4: 25 33% 39%;  /* brown accent */
+    --chart-5: 126 15% 85%; /* muted */
   }
 
   .dark {
@@ -39,24 +46,31 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 225 100% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    /* Inzu theme – dark mode */
+    --primary: 140 25% 26%; /* #32533D */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 126 20% 64%; /* #90B494 */
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 106 30% 18%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 25 33% 39%; /* #825D42 */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 13.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Charts aligned with Inzu palette */
+    --chart-1: 140 25% 26%;
+    --chart-2: 126 20% 64%;
+    --chart-3: 106 50% 10%;
+    --chart-4: 25 33% 39%;
+    --chart-5: 126 15% 85%;
+    /* Inzu custom palette tokens */
+    --inzu-primary: 140 25% 26%;
+    --inzu-primary-soft: 126 20% 64%;
+    --inzu-bg-dark: 106 50% 10%;
+    --inzu-accent: 25 33% 39%;
   }
 }
 

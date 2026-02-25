@@ -41,9 +41,11 @@ export default function TenantPortalPage() {
           <h3 className="text-sm font-medium">Your unit</h3>
           {unit ? (
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-              {(unit.label || unit.address || unit.addressLine1) && (
+              {(unit.unitNumber || unit.label || unit.address || unit.addressLine1) && (
                 <p className="font-medium text-foreground">
-                  {unit.label ?? unit.address ?? unit.addressLine1 ?? "—"}
+                  {unit.unitNumber
+                    ? `Unit ${unit.unitNumber}`
+                    : unit.label ?? unit.address ?? unit.addressLine1 ?? "—"}
                 </p>
               )}
               {unit.addressLine1 && unit.label !== unit.addressLine1 && (

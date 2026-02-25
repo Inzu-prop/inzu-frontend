@@ -47,6 +47,7 @@ export type TenantMeResponse = {
   organization: { name: string; [key: string]: unknown };
   unit: {
     _id?: string;
+    unitNumber?: string;
     label?: string;
     address?: string;
     addressLine1?: string;
