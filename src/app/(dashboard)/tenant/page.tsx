@@ -1,129 +1,161 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import Container from "@/components/container";
-import { Button } from "@/components/ui/button";
-import { useAuthMe } from "@/hooks/use-auth-me";
+import { useTenantMe } from "@/contexts/tenant-me-context";
+
+function formatDate(value: string | undefined): string {
+  if (!value) return "—";
+  try {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString();
+  } catch {
+    return value;
+  }
+}
+
+function formatCurrency(amount: number | undefined, currency = ""): string {
+  if (amount == null) return "—";
+  return `${currency ? currency + " " : ""}${Number(amount).toLocaleString()}`;
+}
 
 export default function TenantPortalPage() {
-  const { user } = useUser();
-  const { data } = useAuthMe();
+  const { data } = useTenantMe();
 
-  const tenant = data?.tenant;
-
-  const displayName =
-    user?.fullName ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    "Your profile";
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    "No email on file";
-  const phoneNumber =
-    tenant?.phoneNumber || "No phone number on file";
-  const status = tenant?.status || "Active tenant";
+  const unit = data?.unit ?? null;
+  const recentInvoices = data?.recentInvoices ?? [];
+  const recentPayments = data?.recentPayments ?? [];
+  const recentMaintenanceTickets = data?.recentMaintenanceTickets ?? [];
 
   return (
     <Container className="py-10">
       <section className="mb-8 space-y-2">
-        <h2 className="text-2xl font-semibold">Welcome to your tenant portal</h2>
+        <h2 className="text-2xl font-semibold">Your dashboard</h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Track your rent, keep an eye on your unit details, and request
-          maintenance in one place. As your landlord enables more features,
-          new options will appear here automatically.
+          View your unit, rent and invoices, payments, and maintenance
+          requests in one place.
         </p>
       </section>
 
-      <section className="mb-8 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Rent status
-              </p>
-              <p className="mt-1 text-lg font-semibold">Up to date</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Next due date</p>
-              <p className="mt-1 text-base font-medium">1st of each month</p>
-            </div>
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Live balances and payment history will appear here once your
-            landlord connects payments.
-          </p>
-        </div>
-
-        <div className="space-y-3 rounded-xl border border-border bg-card p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Quick actions
-          </p>
-          <div className="space-y-2">
-            <Button size="sm" className="w-full" disabled>
-              Pay rent (coming soon)
-            </Button>
-            <Button size="sm" variant="outline" className="w-full" disabled>
-              Request maintenance (coming soon)
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Once enabled, these buttons will take you directly to secure rent
-            payments and maintenance requests.
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-medium">Your unit</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Basic unit details such as address, unit number, and included
-            utilities will appear here.
-          </p>
-          <div className="mt-4 space-y-2 text-xs text-muted-foreground">
-            <p>• Address and unit information</p>
-            <p>• Lease start / end dates</p>
-            <p>• Included services (parking, internet, etc.)</p>
-          </div>
+          {unit ? (
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              {(unit.label || unit.address || unit.addressLine1) && (
+                <p className="font-medium text-foreground">
+                  {unit.label ?? unit.address ?? unit.addressLine1 ?? "—"}
+                </p>
+              )}
+              {unit.addressLine1 && unit.label !== unit.addressLine1 && (
+                <p>{unit.addressLine1}</p>
+              )}
+              {(unit.city || unit.country) && (
+                <p>
+                  {[unit.city, unit.country].filter(Boolean).join(", ")}
+                </p>
+              )}
+              {(unit.leaseStart || unit.leaseEnd) && (
+                <p>
+                  Lease: {formatDate(unit.leaseStart)} —{" "}
+                  {unit.leaseEnd ? formatDate(unit.leaseEnd) : "Ongoing"}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No unit assigned yet. Your landlord will link you to a unit when
+              your lease is set up.
+            </p>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-medium">Communication & notices</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Important messages from your landlord and building-wide notices
-            will show up in this section.
-          </p>
-          <div className="mt-4 rounded-md border border-dashed border-border bg-background/40 p-3 text-xs text-muted-foreground">
-            No messages yet. When your landlord sends updates (like scheduled
-            maintenance or building notices), they&apos;ll appear here.
-          </div>
+          <h3 className="text-sm font-medium">Your rent & invoices</h3>
+          {recentInvoices.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {recentInvoices.slice(0, 5).map((inv) => (
+                <li
+                  key={inv._id}
+                  className="flex items-center justify-between gap-4 text-sm"
+                >
+                  <span className="text-muted-foreground">
+                    {inv.periodStart && inv.periodEnd
+                      ? `${formatDate(inv.periodStart)} – ${formatDate(inv.periodEnd)}`
+                      : formatDate(inv.dueDate)}
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(inv.amount)}
+                    {inv.status && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {inv.status}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No invoices yet. When your landlord generates invoices, they will
+              appear here.
+            </p>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-medium">Your profile</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            This information comes from your account and your tenant record.
-          </p>
-          <div className="mt-4 space-y-2 text-xs text-muted-foreground">
-            <div>
-              <p className="font-medium text-foreground">{displayName}</p>
-              <p>{email}</p>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">
-                  Phone
-                </p>
-                <p className="mt-1 text-foreground">{phoneNumber}</p>
-              </div>
-              <div>
-                <p className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">
-                  Status
-                </p>
-                <p className="mt-1 text-foreground">{status}</p>
-              </div>
-            </div>
-          </div>
+          <h3 className="text-sm font-medium">Recent payments</h3>
+          {recentPayments.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {recentPayments.slice(0, 5).map((pay) => (
+                <li
+                  key={pay._id}
+                  className="flex items-center justify-between gap-4 text-sm"
+                >
+                  <span className="text-muted-foreground">
+                    {formatDate(pay.paidAt)}
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(pay.amount)}
+                    {pay.method && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {pay.method}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No payments recorded yet.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="text-sm font-medium">Maintenance requests</h3>
+          {recentMaintenanceTickets.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {recentMaintenanceTickets.slice(0, 5).map((ticket) => (
+                <li
+                  key={ticket._id}
+                  className="flex flex-col gap-1 text-sm"
+                >
+                  <span className="font-medium text-foreground">
+                    {ticket.title ?? "Maintenance request"}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {ticket.status ?? "—"} · {formatDate(ticket.createdAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No maintenance requests yet. You can request maintenance from your
+              landlord when the feature is available.
+            </p>
+          )}
         </div>
       </section>
     </Container>

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { DashboardShell } from "@/components/nav/dashboard-shell";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import Container from "@/components/container";
+import { TenantMeProvider } from "@/contexts/tenant-me-context";
 import { TenantPortalShell } from "@/components/tenant-portal-shell";
 
 export function OnboardingView() {
@@ -68,7 +69,11 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
         </DashboardShell>
       );
     }
-    return <TenantPortalShell>{children}</TenantPortalShell>;
+    return (
+      <TenantMeProvider>
+        <TenantPortalShell>{children}</TenantPortalShell>
+      </TenantMeProvider>
+    );
   }
 
   if (showOnboarding) {

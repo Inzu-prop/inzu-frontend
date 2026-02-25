@@ -36,6 +36,51 @@ export type AuthMeResponse = {
   } | null;
 };
 
+export type TenantMeResponse = {
+  tenant: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    [key: string]: unknown;
+  };
+  organization: { name: string; [key: string]: unknown };
+  unit: {
+    _id?: string;
+    label?: string;
+    address?: string;
+    addressLine1?: string;
+    city?: string;
+    country?: string;
+    leaseStart?: string;
+    leaseEnd?: string | null;
+    [key: string]: unknown;
+  } | null;
+  recentInvoices: Array<{
+    _id: string;
+    amount?: number;
+    dueDate?: string;
+    status?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    [key: string]: unknown;
+  }>;
+  recentPayments: Array<{
+    _id: string;
+    amount?: number;
+    paidAt?: string;
+    method?: string;
+    [key: string]: unknown;
+  }>;
+  recentMaintenanceTickets: Array<{
+    _id: string;
+    title?: string;
+    status?: string;
+    createdAt?: string;
+    [key: string]: unknown;
+  }>;
+};
+
 function getBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (!url) {
@@ -120,6 +165,10 @@ export function createInzuApiClient(deps: InzuApiDeps) {
           body,
           requiresOrg: false,
         }),
+    },
+    tenant: {
+      me: () =>
+        request<TenantMeResponse>("GET", "tenant/me", { requiresOrg: false }),
     },
     dashboard: {
       getSummary: () =>
