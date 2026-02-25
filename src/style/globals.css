@@ -40,13 +40,15 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Inzu dark background & surfaces */
+    --background: 106 50% 10%; /* #13270D */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 106 40% 13%;       /* slightly lighter than background */
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 106 40% 13%;
     --popover-foreground: 210 40% 98%;
-    /* Inzu theme – dark mode */
+
+    /* Inzu theme – dark mode accents */
     --primary: 140 25% 26%; /* #32533D */
     --primary-foreground: 210 40% 98%;
     --secondary: 126 20% 64%; /* #90B494 */
@@ -57,15 +59,17 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 13.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 106 25% 22%;
+    --input: 106 25% 20%;
+    --ring: 126 35% 55%; /* soft green focus ring */
+
     /* Charts aligned with Inzu palette */
     --chart-1: 140 25% 26%;
     --chart-2: 126 20% 64%;
     --chart-3: 106 50% 10%;
     --chart-4: 25 33% 39%;
     --chart-5: 126 15% 85%;
+
     /* Inzu custom palette tokens */
     --inzu-primary: 140 25% 26%;
     --inzu-primary-soft: 126 20% 64%;
