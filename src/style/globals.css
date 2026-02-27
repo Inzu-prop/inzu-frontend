@@ -97,6 +97,7 @@
   .cl-cardBox {
     --clerk-background: hsl(var(--inzu-silk)) !important;
     box-shadow: none;
+    color: hsl(var(--foreground));
   }
   .dark [data-clerk-card],
   .dark .cl-card,
@@ -118,5 +119,22 @@
   .dark [class*="cl-footer"] {
     background: hsl(var(--muted)) !important;
     background-image: none !important;
+  }
+
+  /* Ensure menu items like \"Manage account\" / \"Sign out\" are readable in light mode */
+  .cl-userButtonPopoverActionButton,
+  .cl-userButtonPopoverActionButtonText,
+  .cl-organizationSwitcherPopoverActionButton,
+  .cl-organizationSwitcherPopoverActionButtonText,
+  .cl-menuItem,
+  .cl-menuItemText {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .cl-userButtonPopoverActionButton:hover,
+  .cl-organizationSwitcherPopoverActionButton:hover,
+  .cl-menuItem:hover {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
   }
 }
