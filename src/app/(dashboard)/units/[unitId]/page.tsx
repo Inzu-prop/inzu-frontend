@@ -31,10 +31,8 @@ export default function UnitDetailPage() {
     api.units
       .get(unitId)
       .then((res) => {
-        const extracted =
-          (res as { unit?: Unit }).unit !== undefined
-            ? (res as { unit: Unit }).unit
-            : (res as Unit);
+        const withUnit = res as { unit?: Unit };
+        const extracted: Unit = withUnit.unit ?? (res as Unit);
         setUnit(extracted);
       })
       .catch((err) =>
