@@ -62,45 +62,61 @@ export default function DashboardClient() {
     };
   }, [api.dashboard, organizationId]);
 
-  const renderKeyValue = (data: Record<string, unknown>) => {
+  const extractMetrics = (data: Record<string, unknown> | null) => {
+    if (!data) return { primary: null as null | [string, unknown], rest: [] as [string, unknown][] };
     const entries = Object.entries(data);
-    if (entries.length === 0) {
-      return <p className="text-sm text-muted-foreground">No data available yet.</p>;
+    const numericEntries = entries.filter(
+      ([, value]) => typeof value === "number",
+    ) as [string, number][];
+
+    if (numericEntries.length === 0) {
+      return {
+        primary: (entries[0] as [string, unknown]) ?? null,
+        rest: entries.slice(1),
+      };
     }
 
-    return (
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
-        {entries.map(([key, value]) => (
-          <div key={key} className="space-y-0.5">
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-              {key.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}
-            </dt>
-            <dd className="font-medium">
-              {typeof value === "number" || typeof value === "string"
-                ? String(value)
-                : Array.isArray(value)
-                  ? `${value.length} items`
-                  : value === null || value === undefined
-                    ? "—"
-                    : "Object"}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    );
+    const [primary, ...restNumeric] = numericEntries;
+    const numericKeys = new Set(restNumeric.map(([key]) => key).concat(primary[0]));
+    const rest = entries.filter(([key]) => !numericKeys.has(key));
+
+    return {
+      primary,
+      rest: [...restNumeric, ...rest],
+    };
   };
+
+  const formatLabel = (raw: string) =>
+    raw
+      .replace(/([A-Z])/g, " $1")
+      .replace(/_/g, " ")
+      .trim();
+
+  const formatValue = (value: unknown) => {
+    if (typeof value === "number" || typeof value === "string") return String(value);
+    if (Array.isArray(value)) return `${value.length} items`;
+    if (value === null || value === undefined) return "—";
+    return "Object";
+  };
+
+  const { primary, rest } = extractMetrics(summary);
 
   return (
     <RequireOrganization>
-      <Container className="py-6 space-y-6">
-        <section className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-          <p className="text-sm text-muted-foreground">
-            Organization-level summary and trends powered by your dashboard API.
+      <Container className="space-y-8 py-8">
+        <section className="space-y-2">
+          <p className="text-xs font-normal uppercase tracking-[0.18em] text-muted-foreground">
+            Overview
+          </p>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            One primary truth about your portfolio, with supporting signals in
+            the background.
           </p>
         </section>
 
-        {loading && <p className="text-muted-foreground">Loading dashboard…</p>}
+        {loading && (
+          <p className="text-sm text-muted-foreground">Loading dashboard…</p>
+        )}
         {error && (
           <p className="text-destructive" role="alert">
             {error}
@@ -108,22 +124,50 @@ export default function DashboardClient() {
         )}
 
         {!loading && !error && (
-          <div className="grid gap-6 lg:grid-cols-3">
-            <section className="lg:col-span-2 space-y-3 rounded-xl border border-border bg-card p-5">
-              <h2 className="text-sm font-medium">Summary</h2>
-              {summary ? (
-                renderKeyValue(summary)
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No summary data returned yet.
+          <section className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
+            <div className="space-y-6 rounded-3xl bg-card/80 px-6 py-5 shadow-none backdrop-blur-sm">
+              <div className="space-y-2">
+                <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
+                  Primary truth
                 </p>
-              )}
-            </section>
+                {primary ? (
+                  <>
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      {formatLabel(primary[0])}
+                    </p>
+                    <p className="mt-1 text-5xl font-semibold tracking-[-0.02em] tabular-nums">
+                      {formatValue(primary[1])}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No primary metric available yet.
+                  </p>
+                )}
+              </div>
 
-            <section className="space-y-3 rounded-xl border border-border bg-card p-5">
-              <h2 className="text-sm font-medium">Trends</h2>
+              {rest.length > 0 && (
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm md:grid-cols-3">
+                  {rest.slice(0, 6).map(([key, value]) => (
+                    <div key={key} className="space-y-1">
+                      <dt className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+                        {formatLabel(key)}
+                      </dt>
+                      <dd className="font-normal">
+                        {formatValue(value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-3xl bg-card/70 px-6 py-5 shadow-none">
+              <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
+                Trends (raw)
+              </p>
               {trends ? (
-                <pre className="max-h-72 overflow-auto rounded bg-background/60 p-3 text-xs text-muted-foreground">
+                <pre className="max-h-72 overflow-auto rounded-xl bg-background/60 p-3 text-xs text-muted-foreground">
                   {JSON.stringify(trends, null, 2)}
                 </pre>
               ) : (
@@ -131,8 +175,8 @@ export default function DashboardClient() {
                   No trends data returned yet.
                 </p>
               )}
-            </section>
-          </div>
+            </div>
+          </section>
         )}
       </Container>
     </RequireOrganization>

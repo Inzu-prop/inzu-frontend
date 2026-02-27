@@ -8,26 +8,31 @@ import { cn } from "@/lib/utils";
 export default function Navigation() {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-grow flex-col gap-y-1 p-2">
+    <nav className="flex flex-grow flex-col gap-y-1 px-3 pb-4 pt-2">
       {navigations.map((navigation) => {
         const Icon = navigation.icon;
+        const isActive =
+          pathname === navigation.href ||
+          (navigation.href !== "/" && pathname?.startsWith(navigation.href));
         return (
           <Link
             key={navigation.name}
             href={navigation.href}
             className={cn(
-              "flex items-center rounded-md px-2 py-1.5 hover:bg-slate-200 dark:hover:bg-slate-800",
-              pathname === navigation.href ||
-                (navigation.href !== "/" && pathname?.startsWith(navigation.href))
-                ? "bg-slate-200 dark:bg-slate-800"
-                : "bg-transparent",
+              "group flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
+              isActive
+                ? "bg-white/5 text-[hsl(var(--background))]"
+                : "text-[hsla(var(--background),0.7)] hover:text-[hsl(var(--background))]",
             )}
           >
             <Icon
               size={16}
-              className="mr-2 text-slate-800 dark:text-slate-200"
+              className={cn(
+                "shrink-0 text-[hsla(var(--background),0.75)] transition-colors",
+                isActive && "text-[hsl(var(--background))]",
+              )}
             />
-            <span className="text-sm text-slate-700 dark:text-slate-300">
+            <span className="tracking-[0.08em] uppercase">
               {navigation.name}
             </span>
           </Link>

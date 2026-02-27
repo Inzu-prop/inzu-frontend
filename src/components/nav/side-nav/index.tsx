@@ -14,8 +14,8 @@ export default function SideNav() {
     <>
       <button
         className={cn(
-          "fixed left-0 top-12 z-50 rounded-r-md bg-muted px-2 py-1.5 text-foreground shadow-md hover:bg-accent hover:text-accent-foreground dark:bg-neutral-900 dark:hover:bg-neutral-800 tablet:hidden",
-          "transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-12 z-50 rounded-r-md bg-[hsl(var(--inzu-forest))] px-2 py-1.5 text-[hsl(var(--background))] tablet:hidden",
+          "transition-transform duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
           isOpen ? "translate-x-44" : "translate-x-0",
         )}
         onClick={() => setIsOpen(!isOpen)}
@@ -28,8 +28,8 @@ export default function SideNav() {
       </button>
       <aside
         className={cn(
-          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] w-44 shrink-0 flex-col border-r border-border bg-muted dark:bg-neutral-900 tablet:sticky tablet:translate-x-0",
-          "transition-transform duration-300 ease-in-out",
+          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] w-48 shrink-0 flex-col bg-[hsl(var(--inzu-forest))] tablet:sticky tablet:translate-x-0",
+          "transition-transform duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >

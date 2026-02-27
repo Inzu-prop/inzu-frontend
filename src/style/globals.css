@@ -5,76 +5,79 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Inzu brand tokens (HSL, used via hsl(var(--token))) */
+    --inzu-forest: 151 26% 24%; /* #2D4B3E – Deep Forest Green (structural chassis) */
+    --inzu-silk: 150 14% 96%; /* #F5F7F6 – Silver Silk background */
+    --inzu-red: 359 80% 51%; /* #E22026 – Pininfarina accent red */
+    --inzu-bg-dark: 106 50% 10%; /* #13270D – deep green for dark surfaces */
+    --inzu-accent: 25 33% 39%; /* #825D42 – leather / wood accent */
+
+    /* Semantic tokens – light mode */
+    --background: var(--inzu-silk);
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    /* Inzu theme – light mode */
-    --primary: 140 25% 26%; /* #32533D */
+
+    --primary: var(--inzu-forest);
     --primary-foreground: 210 40% 98%;
-    --secondary: 126 20% 64%; /* #90B494 */
+    --secondary: 126 20% 64%; /* soft supporting green */
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 126 15% 85%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 25 33% 39%; /* #825D42 */
+    --accent: var(--inzu-accent);
     --accent-foreground: 210 40% 98%;
-    /* Inzu custom palette tokens (HSL, used via hsl(var(--token))) */
-    --inzu-primary: 140 25% 26%; /* #32533D */
-    --inzu-primary-soft: 126 20% 64%; /* #90B494 */
-    --inzu-bg-dark: 106 50% 10%; /* #13270D */
-    --inzu-accent: 25 33% 39%; /* #825D42 */
-    --destructive: 0 84.2% 60.2%;
+
+    /* Backwards-compatible Inzu tokens */
+    --inzu-primary: var(--inzu-forest);
+    --inzu-primary-soft: 126 20% 64%;
+
+    --destructive: var(--inzu-red);
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 94.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: var(--inzu-forest);
     --radius: 0.5rem;
+
     /* Charts aligned with Inzu palette */
-    --chart-1: 140 25% 26%; /* primary */
+    --chart-1: var(--inzu-forest);
     --chart-2: 126 20% 64%; /* primary soft */
-    --chart-3: 106 50% 10%; /* dark green */
-    --chart-4: 25 33% 39%;  /* brown accent */
+    --chart-3: var(--inzu-bg-dark); /* dark green */
+    --chart-4: var(--inzu-accent); /* brown accent */
     --chart-5: 126 15% 85%; /* muted */
   }
 
   .dark {
     /* Inzu dark background & surfaces */
-    --background: 106 50% 10%; /* #13270D */
+    --background: var(--inzu-bg-dark);
     --foreground: 210 40% 98%;
-    --card: 106 40% 13%;       /* slightly lighter than background */
+    --card: 106 40% 13%; /* slightly lighter than background */
     --card-foreground: 210 40% 98%;
     --popover: 106 40% 13%;
     --popover-foreground: 210 40% 98%;
 
     /* Inzu theme – dark mode accents */
-    --primary: 140 25% 26%; /* #32533D */
+    --primary: var(--inzu-forest);
     --primary-foreground: 210 40% 98%;
-    --secondary: 126 20% 64%; /* #90B494 */
+    --secondary: 126 20% 64%; /* soft supporting green */
     --secondary-foreground: 210 40% 98%;
     --muted: 106 30% 18%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 25 33% 39%; /* #825D42 */
+    --accent: var(--inzu-accent);
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: var(--inzu-red);
     --destructive-foreground: 210 40% 98%;
     --border: 106 25% 22%;
     --input: 106 25% 20%;
     --ring: 126 35% 55%; /* soft green focus ring */
 
     /* Charts aligned with Inzu palette */
-    --chart-1: 140 25% 26%;
+    --chart-1: var(--inzu-forest);
     --chart-2: 126 20% 64%;
-    --chart-3: 106 50% 10%;
-    --chart-4: 25 33% 39%;
+    --chart-3: var(--inzu-bg-dark);
+    --chart-4: var(--inzu-accent);
     --chart-5: 126 15% 85%;
-
-    /* Inzu custom palette tokens */
-    --inzu-primary: 140 25% 26%;
-    --inzu-primary-soft: 126 20% 64%;
-    --inzu-bg-dark: 106 50% 10%;
-    --inzu-accent: 25 33% 39%;
   }
 }
 
