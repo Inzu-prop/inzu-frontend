@@ -175,7 +175,12 @@ function UnitsPageContent() {
                 ) : (
                   <>
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">{u.unitNumber}</span>
+                      <Link
+                        href={`/units/${u._id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {u.unitNumber}
+                      </Link>
                       {u.propertyId && (
                         <Button size="sm" variant="link" className="h-auto p-0" asChild>
                           <Link href={`/properties/${u.propertyId}/units`}>View property units</Link>

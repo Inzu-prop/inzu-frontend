@@ -82,7 +82,7 @@ export default function PropertiesPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/properties/${item._id}/units`}
+                      href={`/properties/${item._id}`}
                       className="font-medium text-primary hover:underline"
                     >
                       {item.name}

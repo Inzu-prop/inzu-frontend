@@ -355,9 +355,12 @@ export default function TenantsPage() {
                   className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
                 >
                   <div>
-                    <span className="font-medium">
+                    <Link
+                      href={`/tenants/${tenantId}`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       {item.name ?? "Tenant"}
-                    </span>
+                    </Link>
                     {item.email && (
                       <span className="ml-2 text-muted-foreground">
                         {item.email}

@@ -102,7 +102,7 @@ export function TenantPortalShell({
           </div>
         </Container>
       </header>
-      <main className="bg-background">{children}</main>
+      <main className="bg-background dark:bg-neutral-950">{children}</main>
     </>
   );
 }
