@@ -19,20 +19,20 @@ export default function Navigation() {
             key={navigation.name}
             href={navigation.href}
             className={cn(
-              "group flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-colors",
+              "group flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
               isActive
-                ? "bg-white/5 text-[hsla(var(--primary-foreground),0.9)]"
-                : "text-[hsla(var(--primary-foreground),0.7)] hover:text-[hsla(var(--primary-foreground),0.9)]",
+                ? "bg-white/5 text-[hsl(var(--primary-foreground))]"
+                : "text-[hsla(var(--primary-foreground),0.7)] hover:text-[hsl(var(--primary-foreground))]",
             )}
           >
             <Icon
               size={16}
               className={cn(
-                "shrink-0 text-[hsla(var(--primary-foreground),0.7)] transition-colors",
-                isActive && "text-[hsla(var(--primary-foreground),0.9)]",
+                "shrink-0 text-[hsla(var(--primary-foreground),0.75)] transition-colors",
+                isActive && "text-[hsl(var(--primary-foreground))]",
               )}
             />
-            <span className="font-medium tracking-[0.08em] uppercase">
+            <span className="tracking-[0.08em] uppercase">
               {navigation.name}
             </span>
           </Link>
