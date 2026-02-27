@@ -98,6 +98,8 @@
     --clerk-background: hsl(var(--inzu-silk)) !important;
     box-shadow: none;
     color: hsl(var(--foreground));
+    font-family: var(--font-gabarito), system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
   }
   .dark [data-clerk-card],
   .dark .cl-card,

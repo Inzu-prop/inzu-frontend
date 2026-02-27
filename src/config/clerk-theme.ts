@@ -38,6 +38,10 @@ export function getClerkAppearanceVariables(
     colorModalBackdrop: "rgba(0,0,0,0.5)",
     borderRadius: "0.5rem",
     colorBorder: isDark ? INZU.borderDark : INZU.borderLight,
+    fontFamily:
+      'var(--font-gabarito), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamilyButtons:
+      'var(--font-gabarito), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   };
 }
 
