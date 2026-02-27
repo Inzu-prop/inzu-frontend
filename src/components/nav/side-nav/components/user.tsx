@@ -1,10 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 
 export default function User() {
   return (
-    <div className="flex h-16 flex-col gap-2 border-b border-border px-2 py-2">
+    <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
+      <div className="flex justify-center pb-1">
+        <Image
+          src="/logo.png"
+          alt="Inzu logo"
+          width={96}
+          height={32}
+          priority
+        />
+      </div>
       <OrganizationSwitcher
         hidePersonal
         afterCreateOrganizationUrl="/"
@@ -17,7 +27,7 @@ export default function User() {
           },
         }}
       />
-      <div className="flex justify-center">
+      <div className="flex justify-center pt-1">
         <UserButton
           afterSignOutUrl="/sign-in"
           appearance={{

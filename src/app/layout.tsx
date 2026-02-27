@@ -15,6 +15,9 @@ const inzuFont = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
+  icons: {
+    icon: "/inzumonogram.jpeg",
+  },
 };
 
 export default function RootLayout({
