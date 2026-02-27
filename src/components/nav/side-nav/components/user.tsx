@@ -5,8 +5,8 @@ import { OrganizationSwitcher } from "@clerk/nextjs";
 
 export default function User() {
   return (
-    <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
-      <div className="flex items-center gap-2 pb-1">
+    <div className="flex h-16 items-center gap-2 border-b border-border px-2">
+      <div className="flex flex-1 items-center gap-2">
         <Image
           src="/logo.png"
           alt="Inzu logo"

@@ -31,7 +31,11 @@ export default function UnitDetailPage() {
     api.units
       .get(unitId)
       .then((res) => {
-        setUnit(res);
+        const extracted =
+          (res as { unit?: Unit }).unit !== undefined
+            ? (res as { unit: Unit }).unit
+            : (res as Unit);
+        setUnit(extracted);
       })
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : String(err)),
@@ -92,11 +96,38 @@ export default function UnitDetailPage() {
 
             <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Metadata
+                Details
               </h2>
-              <pre className="overflow-auto rounded bg-background/60 p-3 text-xs text-muted-foreground">
-                {JSON.stringify(unit, null, 2)}
-              </pre>
+              <dl className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] gap-x-3 gap-y-1 text-sm">
+                <dt className="text-muted-foreground">Unit number</dt>
+                <dd>{unit.unitNumber || "—"}</dd>
+                <dt className="text-muted-foreground">Type</dt>
+                <dd>{unit.type || "—"}</dd>
+                <dt className="text-muted-foreground">Status</dt>
+                <dd>{unit.status || "—"}</dd>
+                <dt className="text-muted-foreground">Rent</dt>
+                <dd>
+                  {unit.rentAmount != null ? Number(unit.rentAmount).toLocaleString() : "—"}
+                </dd>
+                <dt className="text-muted-foreground">Deposit</dt>
+                <dd>
+                  {unit.depositAmount != null ? Number(unit.depositAmount).toLocaleString() : "—"}
+                </dd>
+                <dt className="text-muted-foreground">Property ID</dt>
+                <dd>{unit.propertyId || "—"}</dd>
+                <dt className="text-muted-foreground">Created at</dt>
+                <dd>
+                  {"createdAt" in unit && unit.createdAt
+                    ? new Date(unit.createdAt as unknown as string).toLocaleString()
+                    : "—"}
+                </dd>
+                <dt className="text-muted-foreground">Updated at</dt>
+                <dd>
+                  {"updatedAt" in unit && unit.updatedAt
+                    ? new Date(unit.updatedAt as unknown as string).toLocaleString()
+                    : "—"}
+                </dd>
+              </dl>
             </section>
 
             {unit.propertyId && (
