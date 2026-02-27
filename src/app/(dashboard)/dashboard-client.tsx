@@ -28,12 +28,19 @@ export default function DashboardClient() {
     setLoading(true);
     setError(null);
 
+    const now = new Date();
+    const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const trendParams = {
+      from: from.toISOString(),
+      to: now.toISOString(),
+    };
+
     Promise.all([
       api.dashboard
         .getSummary()
         .then((res) => (!cancelled ? setSummary(res as SummaryResponse) : undefined)),
       api.dashboard
-        .getTrends()
+        .getTrends(trendParams)
         .then((res) => (!cancelled ? setTrends(res as TrendsResponse) : undefined)),
     ])
       .catch((err) => {

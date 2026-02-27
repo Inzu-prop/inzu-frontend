@@ -176,8 +176,10 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         request<unknown>("GET", "organizations/:organizationId/dashboard/summary"),
       getProperty: (propertyId: string) =>
         request<unknown>("GET", `organizations/:organizationId/dashboard/property/${propertyId}`),
-      getTrends: () =>
-        request<unknown>("GET", "organizations/:organizationId/dashboard/trends"),
+      getTrends: (params?: Record<string, string>) =>
+        request<unknown>("GET", "organizations/:organizationId/dashboard/trends", {
+          params,
+        }),
     },
     properties: {
       list: (params?: Record<string, string>) =>
