@@ -8,6 +8,7 @@ import {
   Banknote,
   Users,
   Wrench,
+  Settings,
 } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
@@ -31,4 +32,5 @@ export const navigations: Navigation[] = [
   { icon: Banknote, name: "Payments", href: "/payments" },
   { icon: Wrench, name: "Maintenance", href: "/maintenance" },
   { icon: BarChart3, name: "Reports", href: "/reports" },
+  { icon: Settings, name: "Settings", href: "/settings" },
 ];

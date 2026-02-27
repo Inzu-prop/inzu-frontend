@@ -12,6 +12,7 @@ const PATH_TITLES: Record<string, string> = {
   "/payments": "Payments",
   "/maintenance": "Maintenance",
   "/reports": "Reports",
+  "/settings": "Settings",
 };
 
 function getTitle(pathname: string | null): string {

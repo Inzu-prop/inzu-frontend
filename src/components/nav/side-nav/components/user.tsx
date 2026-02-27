@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher } from "@clerk/nextjs";
 
 export default function User() {
   return (
@@ -27,16 +27,6 @@ export default function User() {
           },
         }}
       />
-      <div className="flex justify-center pt-1">
-        <UserButton
-          afterSignOutUrl="/sign-in"
-          appearance={{
-            elements: {
-              avatarBox: "h-9 w-9",
-            },
-          }}
-        />
-      </div>
     </div>
   );
 }
