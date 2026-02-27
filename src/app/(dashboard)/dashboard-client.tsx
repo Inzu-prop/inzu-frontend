@@ -29,10 +29,16 @@ export default function DashboardClient() {
     setError(null);
 
     const now = new Date();
-    const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const toMonth = `${now.getUTCFullYear()}-${String(
+      now.getUTCMonth() + 1,
+    ).padStart(2, "0")}`;
+    const fromMonth = `${fromDate.getUTCFullYear()}-${String(
+      fromDate.getUTCMonth() + 1,
+    ).padStart(2, "0")}`;
     const trendParams = {
-      from: from.toISOString(),
-      to: now.toISOString(),
+      from: fromMonth,
+      to: toMonth,
     };
 
     Promise.all([
