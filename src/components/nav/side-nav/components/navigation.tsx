@@ -21,15 +21,15 @@ export default function Navigation() {
             className={cn(
               "group flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
               isActive
-                ? "bg-white/5 text-[hsl(var(--background))]"
-                : "text-[hsla(var(--background),0.7)] hover:text-[hsl(var(--background))]",
+                ? "bg-white/5 text-[hsl(var(--primary-foreground))]"
+                : "text-[hsla(var(--primary-foreground),0.7)] hover:text-[hsl(var(--primary-foreground))]",
             )}
           >
             <Icon
               size={16}
               className={cn(
-                "shrink-0 text-[hsla(var(--background),0.75)] transition-colors",
-                isActive && "text-[hsl(var(--background))]",
+                "shrink-0 text-[hsla(var(--primary-foreground),0.75)] transition-colors",
+                isActive && "text-[hsl(var(--primary-foreground))]",
               )}
             />
             <span className="tracking-[0.08em] uppercase">

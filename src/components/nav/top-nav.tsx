@@ -1,9 +1,16 @@
 "use client";
 
-import Container from "../container";
+import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
+import Container from "../container";
+import { getClerkAppearanceVariables } from "@/config/clerk-theme";
 
 export default function TopNav({ title }: { title: string }) {
+  const { resolvedTheme } = useTheme();
+  const variables = getClerkAppearanceVariables(
+    resolvedTheme === "dark" ? "dark" : "light",
+  );
+
   return (
     <Container className="flex h-16 items-center justify-between bg-background/80 backdrop-blur-sm">
       <h1 className="text-xl font-normal tracking-[0.16em] uppercase text-muted-foreground">
@@ -13,6 +20,7 @@ export default function TopNav({ title }: { title: string }) {
         <UserButton
           afterSignOutUrl="/sign-in"
           appearance={{
+            variables,
             elements: {
               avatarBox: "h-9 w-9",
             },

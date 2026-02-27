@@ -14,7 +14,7 @@ export default function SideNav() {
     <>
       <button
         className={cn(
-          "fixed left-0 top-12 z-50 rounded-r-md bg-[hsl(var(--inzu-forest))] px-2 py-1.5 text-[hsl(var(--background))] tablet:hidden",
+          "fixed left-0 top-12 z-50 rounded-r-md bg-[hsl(var(--inzu-forest))] px-2 py-1.5 text-[hsl(var(--primary-foreground))] tablet:hidden",
           "transition-transform duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
           isOpen ? "translate-x-44" : "translate-x-0",
         )}
