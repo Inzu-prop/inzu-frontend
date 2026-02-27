@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import Container from "@/components/container";
-import { clerkDropdownElements, getClerkAppearanceVariables } from "@/config/clerk-theme";
+import { ClerkUserMenu } from "@/components/clerk-user-menu";
 import { useTenantMe } from "@/contexts/tenant-me-context";
 
 function tenantDisplayName(tenant: { firstName?: string; lastName?: string; name?: string }): string {
@@ -22,10 +20,6 @@ export function TenantPortalShell({
 }) {
   const { data, loading, error, isNotLinked } = useTenantMe();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const clerkVariables = getClerkAppearanceVariables(
-    resolvedTheme === "dark" ? "dark" : "light",
-  );
 
   if (loading) {
     return (
@@ -101,16 +95,7 @@ export function TenantPortalShell({
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <UserButton
-              afterSignOutUrl="/sign-in"
-              appearance={{
-                variables: clerkVariables,
-                elements: {
-                  ...clerkDropdownElements,
-                  avatarBox: "h-8 w-8",
-                },
-              }}
-            />
+            <ClerkUserMenu />
           </div>
         </Container>
       </header>

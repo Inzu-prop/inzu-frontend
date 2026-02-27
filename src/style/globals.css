@@ -139,4 +139,16 @@
     background-color: hsl(var(--muted)) !important;
     color: hsl(var(--foreground)) !important;
   }
+
+  /* Make profile name/email and preview text dark in the dropdown */
+  .cl-userPreviewMainIdentifier,
+  .cl-userButtonPopoverMainIdentifier {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500;
+  }
+
+  .cl-userPreviewSecondaryIdentifier,
+  .cl-userButtonPopoverSecondaryIdentifier {
+    color: hsl(var(--foreground)) !important;
+  }
 }
