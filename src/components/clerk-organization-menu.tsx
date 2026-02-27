@@ -13,17 +13,23 @@ import { cn } from "@/lib/utils";
 
 export function ClerkOrganizationMenu({ className }: { className?: string }) {
   const { organization } = useOrganization();
-  const { organizationList, isLoaded, setActive } = useOrganizationList();
+  const orgListCtx = useOrganizationList();
+  const { isLoaded, setActive } = orgListCtx;
   const { openCreateOrganization } = useClerk();
 
   if (!isLoaded) return null;
 
-  const activeOrg = organization ?? organizationList?.find((o) => o.organization.id)?.organization;
+  // Some Clerk versions expose `organizationList`; fall back to `data` if needed.
+  const rawList: any[] =
+    (orgListCtx as any).organizationList ??
+    ((orgListCtx as any).data as any[]) ??
+    [];
+
+  const activeOrg =
+    organization ?? rawList.find((o) => o.organization?.id)?.organization;
 
   const otherOrgs =
-    organizationList?.filter(
-      (item) => item.organization.id !== activeOrg?.id,
-    ) ?? [];
+    rawList.filter((item) => item.organization?.id !== activeOrg?.id) ?? [];
 
   return (
     <DropdownMenu>
