@@ -11,19 +11,31 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+type ClerkOrgListEntry = {
+  organization: {
+    id: string;
+    name?: string | null;
+    slug?: string | null;
+  };
+};
+
+type ClerkOrgListLike = {
+  isLoaded: boolean;
+  setActive: (opts: { organization: string }) => Promise<void> | void;
+  organizationList?: ClerkOrgListEntry[];
+  data?: ClerkOrgListEntry[];
+};
+
 export function ClerkOrganizationMenu({ className }: { className?: string }) {
   const { organization } = useOrganization();
-  const orgListCtx = useOrganizationList();
-  const { isLoaded, setActive } = orgListCtx;
+  const orgListRaw = useOrganizationList();
+  const orgListCtx = orgListRaw as unknown as ClerkOrgListLike;
+  const { isLoaded, setActive, organizationList, data } = orgListCtx;
   const { openCreateOrganization } = useClerk();
 
   if (!isLoaded) return null;
 
-  // Some Clerk versions expose `organizationList`; fall back to `data` if needed.
-  const rawList: any[] =
-    (orgListCtx as any).organizationList ??
-    ((orgListCtx as any).data as any[]) ??
-    [];
+  const rawList: ClerkOrgListEntry[] = organizationList ?? data ?? [];
 
   const activeOrg =
     organization ?? rawList.find((o) => o.organization?.id)?.organization;
