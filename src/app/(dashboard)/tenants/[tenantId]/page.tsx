@@ -47,8 +47,11 @@ export default function TenantDetailPage() {
     api.tenants
       .get(tenantId)
       .then(async (res) => {
-        const raw = res as any;
-        const t: TenantDetails = (raw?.tenant ?? raw) as TenantDetails;
+        const raw = res as
+          | { tenant?: TenantDetails; unitId?: string }
+          | TenantDetails;
+        const fromEnvelope = (raw as { tenant?: TenantDetails }).tenant;
+        const t: TenantDetails = fromEnvelope ?? (raw as TenantDetails);
         setTenant(t);
 
         const unitId = (t.unitId ?? raw?.unitId) as string | undefined;
