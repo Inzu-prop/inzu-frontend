@@ -3,7 +3,7 @@
 import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
 import Container from "../container";
-import { getClerkAppearanceVariables } from "@/config/clerk-theme";
+import { clerkDropdownElements, getClerkAppearanceVariables } from "@/config/clerk-theme";
 
 export default function TopNav({ title }: { title: string }) {
   const { resolvedTheme } = useTheme();
@@ -22,6 +22,7 @@ export default function TopNav({ title }: { title: string }) {
           appearance={{
             variables,
             elements: {
+              ...clerkDropdownElements,
               avatarBox: "h-9 w-9",
             },
           }}

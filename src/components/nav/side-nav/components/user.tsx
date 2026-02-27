@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { OrganizationSwitcher } from "@clerk/nextjs";
-import { getClerkAppearanceVariables } from "@/config/clerk-theme";
+import { clerkDropdownElements, getClerkAppearanceVariables } from "@/config/clerk-theme";
 import { cn } from "@/lib/utils";
 
 export default function User() {
@@ -29,6 +29,7 @@ export default function User() {
           appearance={{
             variables,
             elements: {
+              ...clerkDropdownElements,
               rootBox: "w-full flex justify-start",
               organizationSwitcherTrigger: cn(
                 "w-full justify-between rounded-full px-3 py-1.5 text-sm transition-colors",

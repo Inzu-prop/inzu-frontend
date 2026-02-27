@@ -6,8 +6,7 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import Container from "@/components/container";
-import { getClerkAppearanceVariables } from "@/config/clerk-theme";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { clerkDropdownElements, getClerkAppearanceVariables } from "@/config/clerk-theme";
 import { useTenantMe } from "@/contexts/tenant-me-context";
 
 function tenantDisplayName(tenant: { firstName?: string; lastName?: string; name?: string }): string {
@@ -102,12 +101,14 @@ export function TenantPortalShell({
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <ThemeToggle />
             <UserButton
               afterSignOutUrl="/sign-in"
               appearance={{
                 variables: clerkVariables,
-                elements: { avatarBox: "h-8 w-8" },
+                elements: {
+                  ...clerkDropdownElements,
+                  avatarBox: "h-8 w-8",
+                },
               }}
             />
           </div>

@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Provider as JotaiProvider } from "jotai";
 import { ChartThemeProvider } from "@/components/providers/chart-theme-provider";
 import { ModeThemeProvider } from "@/components/providers/mode-theme-provider";
+import { clerkLayout } from "@/config/clerk-theme";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const publishableKey =
@@ -11,12 +12,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     process.env.CLERK_PUBLISHABLE_KEY;
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      appearance={{ layout: clerkLayout }}
+    >
       <JotaiProvider>
         <ModeThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          forcedTheme="light"
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <ChartThemeProvider>{children}</ChartThemeProvider>

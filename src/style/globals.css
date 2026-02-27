@@ -89,3 +89,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Clerk dropdowns: align with Inzu theme (no orange stripe, minimal footer) */
+@layer components {
+  [data-clerk-card],
+  .cl-card,
+  .cl-cardBox {
+    --clerk-background: hsl(var(--inzu-silk)) !important;
+    box-shadow: none;
+  }
+  .dark [data-clerk-card],
+  .dark .cl-card,
+  .dark .cl-cardBox {
+    --clerk-background: hsl(var(--inzu-bg-dark)) !important;
+  }
+  /* Remove dev-mode orange stripe; use muted footer */
+  .cl-footer,
+  [data-clerk-footer],
+  [class*="cl-footer"],
+  [class*="developmentMode"] {
+    background: hsl(var(--muted)) !important;
+    background-image: none !important;
+    border-top: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+  }
+  .dark .cl-footer,
+  .dark [data-clerk-footer],
+  .dark [class*="cl-footer"] {
+    background: hsl(var(--muted)) !important;
+    background-image: none !important;
+  }
+}
