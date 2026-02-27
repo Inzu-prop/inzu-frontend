@@ -22,7 +22,7 @@ export default function User() {
             elements: {
               rootBox: "w-full flex justify-start",
               organizationSwitcherTrigger:
-                "w-full justify-between rounded-md px-2 py-1.5 hover:bg-muted dark:hover:bg-muted/80",
+                "w-full justify-between rounded-md px-2 py-1.5 text-foreground hover:bg-muted dark:text-slate-100 dark:hover:bg-muted/70",
             },
           }}
         />
