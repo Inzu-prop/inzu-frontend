@@ -67,10 +67,12 @@ export default function TenantDetailPage() {
       .finally(() => setLoading(false));
   }, [api.tenants, api.units, organizationId, tenantId]);
 
-  const displayName =
-    tenant?.name ??
-    [tenant?.firstName, tenant?.lastName].filter(Boolean).join(" ") ||
-    "Tenant";
+  const displayName = (() => {
+    const fromTenant =
+      tenant?.name ??
+      [tenant?.firstName, tenant?.lastName].filter(Boolean).join(" ");
+    return fromTenant || "Tenant";
+  })();
 
   return (
     <RequireOrganization>
