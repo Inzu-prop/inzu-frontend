@@ -1,10 +1,10 @@
-\"use client\";
+"use client";
 
-import { useEffect, useState } from \"react\";
-import Container from \"@/components/container\";
-import { useTenantMe } from \"@/contexts/tenant-me-context\";
-import { useInzuApi } from \"@/hooks/use-inzu-api\";
-import { ApiError } from \"@/lib/api\";
+import { useEffect, useState } from "react";
+import Container from "@/components/container";
+import { useTenantMe } from "@/contexts/tenant-me-context";
+import { useInzuApi } from "@/hooks/use-inzu-api";
+import { ApiError } from "@/lib/api";
 
 function formatDate(value: string | undefined): string {
   if (!value) return "—";
