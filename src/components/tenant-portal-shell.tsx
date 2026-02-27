@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
@@ -70,11 +71,14 @@ export function TenantPortalShell({
       <header className="sticky top-0 z-30 border-b border-border bg-background">
         <Container className="flex h-16 w-full items-center justify-between gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
-            <Link
-              href="/tenant"
-              className="shrink-0 text-xl font-semibold tracking-tight"
-            >
-              INZU
+            <Link href="/tenant" className="shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Inzu logo"
+                width={96}
+                height={32}
+                priority
+              />
             </Link>
             <span className="hidden shrink-0 border-l border-border pl-4 text-sm text-muted-foreground sm:inline">
               Tenant portal
