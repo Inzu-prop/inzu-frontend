@@ -1,7 +1,10 @@
-"use client";
+\"use client\";
 
-import Container from "@/components/container";
-import { useTenantMe } from "@/contexts/tenant-me-context";
+import { useEffect, useState } from \"react\";
+import Container from \"@/components/container\";
+import { useTenantMe } from \"@/contexts/tenant-me-context\";
+import { useInzuApi } from \"@/hooks/use-inzu-api\";
+import { ApiError } from \"@/lib/api\";
 
 function formatDate(value: string | undefined): string {
   if (!value) return "—";
@@ -20,11 +23,94 @@ function formatCurrency(amount: number | undefined, currency = ""): string {
 
 export default function TenantPortalPage() {
   const { data } = useTenantMe();
+  const api = useInzuApi();
 
   const unit = data?.unit ?? null;
   const recentInvoices = data?.recentInvoices ?? [];
   const recentPayments = data?.recentPayments ?? [];
   const recentMaintenanceTickets = data?.recentMaintenanceTickets ?? [];
+
+  const latestInvoice = recentInvoices[0] ?? null;
+
+  const [mpesaAmount, setMpesaAmount] = useState(
+    latestInvoice?.amount != null ? String(latestInvoice.amount) : "",
+  );
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [mpesaStatus, setMpesaStatus] = useState<
+    "idle" | "initiating" | "pending" | "success" | "failed" | "error"
+  >("idle");
+  const [mpesaPaymentId, setMpesaPaymentId] = useState<string | null>(null);
+  const [mpesaError, setMpesaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (latestInvoice?.amount != null && !mpesaAmount) {
+      setMpesaAmount(String(latestInvoice.amount));
+    }
+  }, [latestInvoice?.amount, mpesaAmount]);
+
+  async function handleInitiateMpesa(event: React.FormEvent) {
+    event.preventDefault();
+    setMpesaError(null);
+
+    const amountNumber = Number(mpesaAmount);
+    if (!amountNumber || amountNumber <= 0) {
+      setMpesaError("Enter a valid amount.");
+      return;
+    }
+    if (!mpesaPhone || !/^2547\d{8}$/.test(mpesaPhone.trim())) {
+      setMpesaError("Enter a valid M-Pesa phone (format 2547XXXXXXXX).");
+      return;
+    }
+
+    try {
+      setMpesaStatus("initiating");
+      const orderId = latestInvoice?._id ?? "RENT_PAYMENT";
+      const res = await api.mpesaPayments.initiate({
+        amount: amountNumber,
+        phoneNumber: mpesaPhone.trim(),
+        orderId,
+      });
+      setMpesaPaymentId(res.paymentId);
+      setMpesaStatus(res.status === "pending" ? "pending" : res.status);
+
+      if (res.status === "pending") {
+        void pollMpesaStatus(res.paymentId);
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Could not initiate payment.";
+      setMpesaError(message);
+      setMpesaStatus("error");
+    }
+  }
+
+  async function pollMpesaStatus(paymentId: string) {
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      attempts += 1;
+      try {
+        const res = await api.mpesaPayments.getStatus(paymentId);
+        if (res.status === "success" || res.status === "failed") {
+          setMpesaStatus(res.status);
+          return;
+        }
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : "Could not check payment status.";
+        setMpesaError(message);
+        setMpesaStatus("error");
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+
+    setMpesaStatus("error");
+    setMpesaError("Payment is still pending. Please check again later.");
+  }
 
   return (
     <Container className="py-10">
@@ -102,6 +188,84 @@ export default function TenantPortalPage() {
               appear here.
             </p>
           )}
+          <div className="mt-5 border-t border-border pt-4">
+            <h4 className="text-sm font-medium">Pay with M-Pesa</h4>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Enter the amount and your M-Pesa phone number to receive an STK
+              push request.
+            </p>
+            <form
+              onSubmit={handleInitiateMpesa}
+              className="mt-3 flex flex-col gap-3 text-sm"
+            >
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label
+                    htmlFor="mpesa-amount"
+                    className="mb-1 block text-xs font-medium text-muted-foreground"
+                  >
+                    Amount
+                  </label>
+                  <input
+                    id="mpesa-amount"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={mpesaAmount}
+                    onChange={(e) => setMpesaAmount(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label
+                    htmlFor="mpesa-phone"
+                    className="mb-1 block text-xs font-medium text-muted-foreground"
+                  >
+                    M-Pesa phone (2547…)
+                  </label>
+                  <input
+                    id="mpesa-phone"
+                    type="tel"
+                    value={mpesaPhone}
+                    onChange={(e) => setMpesaPhone(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholder="2547XXXXXXXX"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="submit"
+                  disabled={mpesaStatus === "initiating" || mpesaStatus === "pending"}
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {mpesaStatus === "initiating"
+                    ? "Sending STK push…"
+                    : mpesaStatus === "pending"
+                      ? "Waiting for confirmation…"
+                      : "Pay with M-Pesa"}
+                </button>
+                {mpesaPaymentId && (
+                  <span className="text-xs text-muted-foreground">
+                    Payment ID: {mpesaPaymentId}
+                  </span>
+                )}
+              </div>
+              {mpesaStatus === "success" && (
+                <p className="text-xs font-medium text-emerald-700">
+                  Payment successful. Thank you.
+                </p>
+              )}
+              {mpesaStatus === "failed" && (
+                <p className="text-xs font-medium text-destructive">
+                  Payment failed. Please try again.
+                </p>
+              )}
+              {mpesaError && (
+                <p className="text-xs font-medium text-destructive">{mpesaError}</p>
+              )}
+            </form>
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">

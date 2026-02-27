@@ -253,6 +253,20 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       generate: (body: unknown) =>
         request<unknown>("POST", "organizations/:organizationId/invoices/generate", { body }),
     },
+    mpesaPayments: {
+      initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
+        request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
+          "POST",
+          "api/payments/mpesa/initiate",
+          { body, requiresOrg: false },
+        ),
+      getStatus: (paymentId: string) =>
+        request<{ paymentId: string; status: "pending" | "success" | "failed"; orderId: string }>(
+          "GET",
+          `api/payments/mpesa/status/${paymentId}`,
+          { requiresOrg: false },
+        ),
+    },
     payments: {
       list: (params?: Record<string, string>) =>
         request<unknown>("GET", "organizations/:organizationId/payments", { params }),
