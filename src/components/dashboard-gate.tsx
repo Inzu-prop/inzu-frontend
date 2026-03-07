@@ -7,7 +7,7 @@ import { useAuthMe } from "@/hooks/use-auth-me";
 import Container from "@/components/container";
 import { TenantMeProvider } from "@/contexts/tenant-me-context";
 import { TenantPortalShell } from "@/components/tenant-portal-shell";
-
+//
 export function OnboardingView() {
   return (
     <Container className="py-10">
