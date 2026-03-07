@@ -257,13 +257,13 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
         request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
           "POST",
-          "api/payments/mpesa/initiate",
+          "payments/mpesa/initiate",
           { body, requiresOrg: false },
         ),
       getStatus: (paymentId: string) =>
         request<{ paymentId: string; status: "pending" | "success" | "failed"; orderId: string }>(
           "GET",
-          `api/payments/mpesa/status/${paymentId}`,
+          `payments/mpesa/status/${paymentId}`,
           { requiresOrg: false },
         ),
     },
