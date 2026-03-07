@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 import type { GeneratedInvoice, GenerateInvoicesResponse, InvoiceListItem } from "@/lib/api";
@@ -178,12 +179,14 @@ function GeneratePanel({
 
 export default function InvoicesPage() {
   const api = useInzuApi();
+  const { organizationId, isLoaded } = useCurrentOrganizationId();
   const [data, setData] = useState<InvoiceListItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
 
   function fetchInvoices() {
+    if (!organizationId) return;
     setLoading(true);
     setLoadError(null);
     api.invoices
@@ -196,9 +199,13 @@ export default function InvoicesPage() {
   }
 
   useEffect(() => {
+    if (!isLoaded || !organizationId) {
+      setLoading(false);
+      return;
+    }
     fetchInvoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded, organizationId]);
 
   return (
     <RequireOrganization>
