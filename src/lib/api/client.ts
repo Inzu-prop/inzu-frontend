@@ -13,6 +13,11 @@ import type {
   CreateUnitBody,
   Unit,
 } from "./units";
+import type {
+  GenerateInvoicesBody,
+  GenerateInvoicesResponse,
+  InvoiceListItem,
+} from "./invoices";
 import { ApiError } from "./errors";
 
 export type SendPortalInviteResponse = {
@@ -247,11 +252,15 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     invoices: {
       list: (params?: Record<string, string>) =>
-        request<unknown>("GET", "organizations/:organizationId/invoices", { params }),
+        request<InvoiceListItem[]>("GET", "organizations/:organizationId/invoices", { params }),
       get: (invoiceId: string) =>
-        request<unknown>("GET", `organizations/:organizationId/invoices/${invoiceId}`),
-      generate: (body: unknown) =>
-        request<unknown>("POST", "organizations/:organizationId/invoices/generate", { body }),
+        request<InvoiceListItem>("GET", `organizations/:organizationId/invoices/${invoiceId}`),
+      generate: (body: GenerateInvoicesBody) =>
+        request<GenerateInvoicesResponse>(
+          "POST",
+          "organizations/:organizationId/invoices/generate",
+          { body },
+        ),
     },
     mpesaPayments: {
       initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
