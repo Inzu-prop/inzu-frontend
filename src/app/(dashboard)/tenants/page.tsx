@@ -111,7 +111,6 @@ export default function TenantsPage() {
     api.tenants
       .list()
       .then((res) => {
-        console.log("Tenants list response", res);
         setData(normalizeTenantsResponse(res));
       })
       .catch((err) =>
