@@ -191,7 +191,7 @@ export default function InvoicesPage() {
     setLoadError(null);
     api.invoices
       .list()
-      .then((res: any) => {
+      .then((res: InvoiceListItem[] | { invoices?: InvoiceListItem[] }) => {
         setData(Array.isArray(res) ? res : res && Array.isArray(res.invoices) ? res.invoices : []);
       })
       .catch((err) =>
