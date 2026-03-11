@@ -22,7 +22,7 @@ function formatCurrency(amount: number | undefined, currency = ""): string {
 }
 
 export default function TenantPortalPage() {
-  const { data } = useTenantMe();
+  const { data, refetch } = useTenantMe();
   const api = useInzuApi();
 
   const unit = data?.unit ?? null;
@@ -94,6 +94,9 @@ export default function TenantPortalPage() {
         const res = await api.mpesaPayments.getStatus(paymentId);
         if (res.status === "success" || res.status === "failed") {
           setMpesaStatus(res.status);
+          if (res.status === "success") {
+            void refetch();
+          }
           return;
         }
       } catch (err) {
