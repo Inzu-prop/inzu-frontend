@@ -191,10 +191,8 @@ export default function InvoicesPage() {
     setLoadError(null);
     api.invoices
       .list()
-      .then((res) => {
-        // eslint-disable-next-line no-console
-        console.log("Invoices response:", res);
-        setData(Array.isArray(res) ? res : []);
+      .then((res: any) => {
+        setData(Array.isArray(res) ? res : res && Array.isArray(res.invoices) ? res.invoices : []);
       })
       .catch((err) =>
         setLoadError(err instanceof ApiError ? err.message : String(err)),
