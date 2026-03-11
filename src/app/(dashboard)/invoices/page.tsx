@@ -192,6 +192,7 @@ export default function InvoicesPage() {
     api.invoices
       .list()
       .then((res) => {
+        // eslint-disable-next-line no-console
         console.log("Invoices response:", res);
         setData(Array.isArray(res) ? res : []);
       })
