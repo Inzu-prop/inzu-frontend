@@ -191,7 +191,10 @@ export default function InvoicesPage() {
     setLoadError(null);
     api.invoices
       .list()
-      .then((res) => setData(Array.isArray(res) ? res : []))
+      .then((res) => {
+        console.log("Invoices response:", res);
+        setData(Array.isArray(res) ? res : []);
+      })
       .catch((err) =>
         setLoadError(err instanceof ApiError ? err.message : String(err)),
       )
