@@ -6,13 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
-import { TenantStatusModal, type TenantStatus } from "@/components/tenant-status-modal";
-import { Badge } from "@/components/ui/badge";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { GeneratedInvoice, GenerateInvoicesResponse, Unit } from "@/lib/api";
 import { ApiError } from "@/lib/api";
-import { CheckCircle, Clock, Users, UserX } from "lucide-react";
 
 function currentYearMonth(): string {
   const now = new Date();
@@ -164,7 +161,6 @@ type TenantDetails = {
   unitId?: string;
   propertyId?: string;
   monthlyRent?: number;
-  status?: TenantStatus;
   [key: string]: unknown;
 };
 
@@ -179,8 +175,6 @@ export default function TenantDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showGenerateInvoice, setShowGenerateInvoice] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [hasManageTenantsPermission, setHasManageTenantsPermission] = useState(true);
 
   useEffect(() => {
     if (!organizationId || !tenantId) {
@@ -217,68 +211,6 @@ export default function TenantDetailPage() {
       .finally(() => setLoading(false));
   }, [api.tenants, api.units, organizationId, tenantId]);
 
-  const handleStatusChange = async (tenantId: string, status: TenantStatus, notes?: string) => {
-    try {
-      await api.tenants.update(tenantId, { status, notes });
-      // Refetch tenant data to get updated status
-      const updatedTenant = await api.tenants.get(tenantId);
-      const raw = updatedTenant as
-        | { tenant?: TenantDetails; unitId?: string }
-        | TenantDetails;
-      const fromEnvelope = (raw as { tenant?: TenantDetails }).tenant;
-      const t: TenantDetails = fromEnvelope ?? (raw as TenantDetails);
-      setTenant(t);
-      setShowStatusModal(false);
-    } catch (err) {
-      throw new Error(err instanceof ApiError ? err.message : String(err));
-    }
-  };
-
-  const getStatusIcon = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return CheckCircle;
-      case "prospective":
-        return Clock;
-      case "inactive":
-        return Users;
-      case "blacklisted":
-        return UserX;
-      default:
-        return Users;
-    }
-  };
-
-  const getStatusColorClasses = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
-      case "prospective":
-        return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800";
-      case "inactive":
-        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
-      case "blacklisted":
-        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusLabel = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return "Active";
-      case "prospective":
-        return "Prospective";
-      case "inactive":
-        return "Inactive";
-      case "blacklisted":
-        return "Blacklisted";
-      default:
-        return "Unknown";
-    }
-  };
-
   const displayName = (() => {
     const fromTenant =
       tenant?.name ??
@@ -306,22 +238,9 @@ export default function TenantDetailPage() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-semibold tracking-tight">
-                    {displayName}
-                  </h1>
-                  {tenant.status && (
-                    <Badge
-                      className={`${getStatusColorClasses(tenant.status)} flex items-center gap-1`}
-                    >
-                      {(() => {
-                        const StatusIcon = getStatusIcon(tenant.status);
-                        return <StatusIcon className="h-3 w-3" />;
-                      })()}
-                      {getStatusLabel(tenant.status)}
-                    </Badge>
-                  )}
-                </div>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  {displayName}
+                </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                   ID: {tenant._id ?? tenantId}
                 </p>
@@ -391,11 +310,6 @@ export default function TenantDetailPage() {
             )}
 
             <div className="flex flex-wrap gap-2">
-              {hasManageTenantsPermission && (
-                <Button size="sm" variant="outline" onClick={() => setShowStatusModal(true)}>
-                  Change Status
-                </Button>
-              )}
               {!showGenerateInvoice && (
                 <Button size="sm" onClick={() => setShowGenerateInvoice(true)}>
                   Generate invoice
@@ -422,20 +336,6 @@ export default function TenantDetailPage() {
               )}
             </div>
           </>
-        )}
-
-        {/* Tenant Status Modal */}
-        {showStatusModal && tenant && (
-          <TenantStatusModal
-            isOpen={showStatusModal}
-            onClose={() => setShowStatusModal(false)}
-            tenantId={tenant._id ?? tenantId}
-            tenantName={displayName}
-            currentStatus={tenant.status}
-            currentUnitId={tenant.unitId}
-            onStatusChange={handleStatusChange}
-            hasManageTenantsPermission={hasManageTenantsPermission}
-          />
         )}
       </Container>
     </RequireOrganization>

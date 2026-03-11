@@ -10,13 +10,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { TenantStatusModal, type TenantStatus } from "@/components/tenant-status-modal";
-import { Badge } from "@/components/ui/badge";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { Unit } from "@/lib/api";
 import { ApiError } from "@/lib/api";
-import { CheckCircle, Clock, Users, UserX } from "lucide-react";
 
 type TenantItem = {
   id?: string;
@@ -28,7 +25,6 @@ type TenantItem = {
   unitId?: string;
   propertyId?: string;
   monthlyRent?: number;
-  status?: TenantStatus;
 };
 
 function normalizeUnitsResponse(res: unknown): Unit[] {
@@ -104,8 +100,6 @@ export default function TenantsPage() {
   const [assignTenantId, setAssignTenantId] = useState<string | null>(null);
   const [assignSelectedUnitId, setAssignSelectedUnitId] = useState<string>("");
   const [assignSubmitting, setAssignSubmitting] = useState(false);
-  const [statusModalTenant, setStatusModalTenant] = useState<TenantItem | null>(null);
-  const [hasManageTenantsPermission, setHasManageTenantsPermission] = useState(true);
 
   const fetchTenants = useCallback(() => {
     if (!organizationId) {
@@ -257,64 +251,6 @@ export default function TenantsPage() {
       .finally(() => setAssignSubmitting(false));
   };
 
-  const handleStatusChange = async (tenantId: string, status: TenantStatus, notes?: string) => {
-    try {
-      await api.tenants.update(tenantId, { status, notes });
-      fetchTenants();
-      setInviteMessage({
-        type: "success",
-        text: `Tenant status updated to ${status}`,
-      });
-    } catch (err) {
-      throw new Error(err instanceof ApiError ? err.message : String(err));
-    }
-  };
-
-  const getStatusIcon = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return CheckCircle;
-      case "prospective":
-        return Clock;
-      case "inactive":
-        return Users;
-      case "blacklisted":
-        return UserX;
-      default:
-        return Users;
-    }
-  };
-
-  const getStatusColorClasses = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
-      case "prospective":
-        return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800";
-      case "inactive":
-        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
-      case "blacklisted":
-        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusLabel = (status?: TenantStatus) => {
-    switch (status) {
-      case "active":
-        return "Active";
-      case "prospective":
-        return "Prospective";
-      case "inactive":
-        return "Inactive";
-      case "blacklisted":
-        return "Blacklisted";
-      default:
-        return "Unknown";
-    }
-  };
-
   return (
     <RequireOrganization>
       <Container className="py-6">
@@ -421,32 +357,20 @@ export default function TenantsPage() {
               const isInviting = invitingTenantId === tenantId;
               const tenantUnitId = item.unitId;
               const assignedUnit = tenantUnitId ? unitsById[tenantUnitId] : undefined;
-              const StatusIcon = getStatusIcon(item.status);
-              
               return (
                 <li
                   key={tenantId}
                   className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Link
-                        href={`/tenants/${tenantId}`}
-                        className="font-medium text-primary hover:underline truncate"
-                      >
-                        {item.name ?? "Tenant"}
-                      </Link>
-                      {item.status && (
-                        <Badge
-                          className={`${getStatusColorClasses(item.status)} flex items-center gap-1`}
-                        >
-                          <StatusIcon className="h-3 w-3" />
-                          {getStatusLabel(item.status)}
-                        </Badge>
-                      )}
-                    </div>
+                  <div>
+                    <Link
+                      href={`/tenants/${tenantId}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {item.name ?? "Tenant"}
+                    </Link>
                     {item.email && (
-                      <span className="ml-2 text-muted-foreground text-sm">
+                      <span className="ml-2 text-muted-foreground">
                         {item.email}
                       </span>
                     )}
@@ -457,15 +381,6 @@ export default function TenantsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {hasManageTenantsPermission && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setStatusModalTenant(item)}
-                      >
-                        Change Status
-                      </Button>
-                    )}
                     <Popover
                       open={assignTenantId === tenantId}
                       onOpenChange={(open) => {
@@ -567,20 +482,6 @@ export default function TenantsPage() {
               );
             })}
           </ul>
-        )}
-
-        {/* Tenant Status Modal */}
-        {statusModalTenant && (
-          <TenantStatusModal
-            isOpen={!!statusModalTenant}
-            onClose={() => setStatusModalTenant(null)}
-            tenantId={statusModalTenant.id ?? statusModalTenant._id ?? ""}
-            tenantName={statusModalTenant.name ?? "Tenant"}
-            currentStatus={statusModalTenant.status}
-            currentUnitId={statusModalTenant.unitId}
-            onStatusChange={handleStatusChange}
-            hasManageTenantsPermission={hasManageTenantsPermission}
-          />
         )}
       </Container>
     </RequireOrganization>
