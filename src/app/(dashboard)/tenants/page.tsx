@@ -25,6 +25,7 @@ type TenantItem = {
   unitId?: string;
   propertyId?: string;
   monthlyRent?: number;
+  status?: string;
 };
 
 function normalizeUnitsResponse(res: unknown): Unit[] {
@@ -100,6 +101,9 @@ export default function TenantsPage() {
   const [assignTenantId, setAssignTenantId] = useState<string | null>(null);
   const [assignSelectedUnitId, setAssignSelectedUnitId] = useState<string>("");
   const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [statusTenantId, setStatusTenantId] = useState<string | null>(null);
+  const [statusSelectedValue, setStatusSelectedValue] = useState<string>("");
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
 
   const fetchTenants = useCallback(() => {
     if (!organizationId) {
@@ -251,6 +255,35 @@ export default function TenantsPage() {
       .finally(() => setAssignSubmitting(false));
   };
 
+  const handleOpenChangeStatus = (tenant: TenantItem) => {
+    const tenantId = tenant.id ?? tenant._id;
+    if (!tenantId) return;
+    setStatusTenantId(tenantId);
+    setStatusSelectedValue(tenant.status || "active");
+  };
+
+  const handleSaveChangeStatus = () => {
+    if (!statusTenantId) return;
+    setStatusSubmitting(true);
+    const body: { status: string } = {
+      status: statusSelectedValue,
+    };
+    api.tenants
+      .update(statusTenantId, body)
+      .then(() => {
+        setStatusTenantId(null);
+        setStatusSelectedValue("");
+        fetchTenants();
+      })
+      .catch((err) => {
+        setInviteMessage({
+          type: "error",
+          text: err instanceof ApiError ? err.message : String(err),
+        });
+      })
+      .finally(() => setStatusSubmitting(false));
+  };
+
   return (
     <RequireOrganization>
       <Container className="py-6">
@@ -374,6 +407,11 @@ export default function TenantsPage() {
                         {item.email}
                       </span>
                     )}
+                    {item.status && (
+                      <span className="ml-2 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                        {item.status}
+                      </span>
+                    )}
                     <div className="mt-1 text-xs text-muted-foreground">
                       {assignedUnit
                         ? `Unit ${assignedUnit.unitNumber}`
@@ -425,6 +463,49 @@ export default function TenantsPage() {
                           onClick={handleSaveAssignUnit}
                         >
                           {assignSubmitting ? "Saving…" : "Save"}
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
+                    <Popover
+                      open={statusTenantId === tenantId}
+                      onOpenChange={(open) => {
+                        if (open) {
+                          handleOpenChangeStatus(item);
+                        } else {
+                          setStatusTenantId(null);
+                          setStatusSelectedValue("");
+                        }
+                      }}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={statusSubmitting}>
+                          Change status
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-80">
+                        <p className="mb-2 text-sm text-muted-foreground">
+                          Update the tenant&apos;s current status.
+                        </p>
+                        <label className="mb-1 block text-sm font-medium">
+                          Status
+                        </label>
+                        <select
+                          value={statusSelectedValue}
+                          onChange={(e) => setStatusSelectedValue(e.target.value)}
+                          className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="blacklisted">Blacklisted</option>
+                          <option value="prospective">Prospective</option>
+                        </select>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          disabled={statusSubmitting}
+                          onClick={handleSaveChangeStatus}
+                        >
+                          {statusSubmitting ? "Saving…" : "Save"}
                         </Button>
                       </PopoverContent>
                     </Popover>
