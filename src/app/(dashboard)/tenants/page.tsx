@@ -22,9 +22,9 @@ type TenantItem = {
   firstName?: string;
   lastName?: string;
   email?: string;
-   unitId?: string;
-   propertyId?: string;
-   monthlyRent?: number;
+  unitId?: string;
+  propertyId?: string;
+  monthlyRent?: number;
 };
 
 function normalizeUnitsResponse(res: unknown): Unit[] {
@@ -111,7 +111,12 @@ export default function TenantsPage() {
     api.tenants
       .list()
       .then((res) => {
-        setData(normalizeTenantsResponse(res));
+        // eslint-disable-next-line no-console
+        console.log("Raw tenants response:", JSON.stringify(res, null, 2));
+        const normalized = normalizeTenantsResponse(res);
+        // eslint-disable-next-line no-console
+        console.log("Normalized tenants info:", JSON.stringify(normalized, null, 2));
+        setData(normalized);
       })
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : String(err)),
