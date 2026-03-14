@@ -6,9 +6,38 @@ import { RequireOrganization } from "@/components/require-organization";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
+import { VChart } from "@visactor/react-vchart";
+import type { IBarChartSpec } from "@visactor/react-vchart";
+
+type MonthlyTrend = {
+  period: { period: string; start: string; end: string };
+  expected: number;
+  collected: number;
+  arrears: number;
+  occupancyRate: number;
+};
+
+type TrendsResponse = {
+  monthly?: MonthlyTrend[];
+};
 
 type SummaryResponse = Record<string, unknown>;
-type TrendsResponse = Record<string, unknown>;
+
+const formatKES = (amount: number) =>
+  `KES ${Number(amount).toLocaleString()}`;
+
+const formatPct = (rate: number) =>
+  `${(rate * 100).toFixed(0)}%`;
+
+const CURRENCY_KEYS = new Set([
+  "expected", "collected", "arrears", "totalExpected", "totalCollected",
+  "totalArrears", "amount", "rent", "monthlyRent", "balance",
+  "totalRent", "revenue", "income",
+]);
+
+const PERCENT_KEYS = new Set([
+  "occupancyRate", "collectionRate", "occupancy", "rate",
+]);
 
 export default function DashboardClient() {
   const { organizationId } = useCurrentOrganizationId();
@@ -36,17 +65,13 @@ export default function DashboardClient() {
     const fromMonth = `${fromDate.getUTCFullYear()}-${String(
       fromDate.getUTCMonth() + 1,
     ).padStart(2, "0")}`;
-    const trendParams = {
-      from: fromMonth,
-      to: toMonth,
-    };
 
     Promise.all([
       api.dashboard
         .getSummary()
         .then((res) => (!cancelled ? setSummary(res as SummaryResponse) : undefined)),
       api.dashboard
-        .getTrends(trendParams)
+        .getTrends({ from: fromMonth, to: toMonth })
         .then((res) => (!cancelled ? setTrends(res as TrendsResponse) : undefined)),
     ])
       .catch((err) => {
@@ -61,6 +86,24 @@ export default function DashboardClient() {
       cancelled = true;
     };
   }, [api.dashboard, organizationId]);
+
+  const formatLabel = (raw: string) =>
+    raw
+      .replace(/([A-Z])/g, " $1")
+      .replace(/_/g, " ")
+      .trim();
+
+  const formatValue = (key: string, value: unknown): string => {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "number") {
+      if (CURRENCY_KEYS.has(key)) return formatKES(value);
+      if (PERCENT_KEYS.has(key)) return formatPct(value);
+      return value.toLocaleString();
+    }
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) return `${value.length} items`;
+    return "—";
+  };
 
   const extractMetrics = (data: Record<string, unknown> | null) => {
     if (!data) return { primary: null as null | [string, unknown], rest: [] as [string, unknown][] };
@@ -80,26 +123,56 @@ export default function DashboardClient() {
     const numericKeys = new Set(restNumeric.map(([key]) => key).concat(primary[0]));
     const rest = entries.filter(([key]) => !numericKeys.has(key));
 
-    return {
-      primary,
-      rest: [...restNumeric, ...rest],
-    };
-  };
-
-  const formatLabel = (raw: string) =>
-    raw
-      .replace(/([A-Z])/g, " $1")
-      .replace(/_/g, " ")
-      .trim();
-
-  const formatValue = (value: unknown) => {
-    if (typeof value === "number" || typeof value === "string") return String(value);
-    if (Array.isArray(value)) return `${value.length} items`;
-    if (value === null || value === undefined) return "—";
-    return "Object";
+    return { primary, rest: [...restNumeric, ...rest] };
   };
 
   const { primary, rest } = extractMetrics(summary);
+
+  const monthly = trends?.monthly ?? [];
+
+  const chartSpec: IBarChartSpec = {
+    type: "bar",
+    data: [
+      {
+        id: "trends",
+        values: monthly.flatMap((m) => [
+          { month: m.period.period, category: "Expected", value: m.expected },
+          { month: m.period.period, category: "Collected", value: m.collected },
+        ]),
+      },
+    ],
+    xField: "month",
+    yField: "value",
+    seriesField: "category",
+    padding: { top: 8, bottom: 8, left: 0, right: 0 },
+    bar: { style: { cornerRadius: [4, 4, 0, 0] } },
+    legends: { visible: true, orient: "top", padding: { bottom: 12 } },
+    axes: [
+      {
+        orient: "left",
+        label: {
+          formatMethod: (val: unknown) =>
+            `KES ${Number(val).toLocaleString()}`,
+          style: { fontSize: 10 },
+        },
+      },
+      {
+        orient: "bottom",
+        label: { style: { fontSize: 10 } },
+      },
+    ],
+    tooltip: {
+      mark: {
+        content: [
+          {
+            key: (d: { category?: unknown } | undefined) => String(d?.category ?? ""),
+            value: (d: { value?: unknown } | undefined) => formatKES(Number(d?.value ?? 0)),
+          },
+        ],
+      },
+    },
+    color: ["hsl(221,83%,53%)", "hsl(142,71%,45%)"],
+  };
 
   return (
     <RequireOrganization>
@@ -125,6 +198,7 @@ export default function DashboardClient() {
 
         {!loading && !error && (
           <section className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
+            {/* Summary panel */}
             <div className="space-y-6 rounded-3xl bg-card/80 px-6 py-5 shadow-none backdrop-blur-sm">
               <div className="space-y-2">
                 <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
@@ -136,7 +210,7 @@ export default function DashboardClient() {
                       {formatLabel(primary[0])}
                     </p>
                     <p className="mt-1 text-5xl font-semibold tracking-[-0.02em] tabular-nums">
-                      {formatValue(primary[1])}
+                      {formatValue(primary[0], primary[1])}
                     </p>
                   </>
                 ) : (
@@ -154,7 +228,7 @@ export default function DashboardClient() {
                         {formatLabel(key)}
                       </dt>
                       <dd className="font-normal">
-                        {formatValue(value)}
+                        {formatValue(key, value)}
                       </dd>
                     </div>
                   ))}
@@ -162,17 +236,54 @@ export default function DashboardClient() {
               )}
             </div>
 
-            <div className="space-y-3 rounded-3xl bg-card/70 px-6 py-5 shadow-none">
+            {/* Trends panel */}
+            <div className="space-y-4 rounded-3xl bg-card/70 px-6 py-5 shadow-none">
               <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
-                Trends (raw)
+                Monthly trends
               </p>
-              {trends ? (
-                <pre className="max-h-72 overflow-auto rounded-xl bg-background/60 p-3 text-xs text-muted-foreground">
-                  {JSON.stringify(trends, null, 2)}
-                </pre>
+
+              {monthly.length > 0 ? (
+                <>
+                  <div className="h-52">
+                    <VChart spec={chartSpec} options={{ autoFit: true }} />
+                  </div>
+
+                  <div className="space-y-2">
+                    {monthly.map((m) => (
+                      <div
+                        key={m.period.period}
+                        className="flex items-center justify-between rounded-xl bg-background/50 px-4 py-3 text-xs"
+                      >
+                        <span className="font-medium text-muted-foreground">
+                          {m.period.period}
+                        </span>
+                        <div className="flex gap-4 tabular-nums">
+                          <span className="text-muted-foreground">
+                            <span className="mr-1 opacity-60">Expected</span>
+                            {formatKES(m.expected)}
+                          </span>
+                          <span className="text-emerald-500">
+                            <span className="mr-1 opacity-60">Collected</span>
+                            {formatKES(m.collected)}
+                          </span>
+                          {m.arrears > 0 && (
+                            <span className="text-rose-500">
+                              <span className="mr-1 opacity-60">Arrears</span>
+                              {formatKES(m.arrears)}
+                            </span>
+                          )}
+                          <span className="text-muted-foreground">
+                            <span className="mr-1 opacity-60">Occ.</span>
+                            {formatPct(m.occupancyRate)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No trends data returned yet.
+                  No trends data available yet.
                 </p>
               )}
             </div>
@@ -182,4 +293,3 @@ export default function DashboardClient() {
     </RequireOrganization>
   );
 }
-

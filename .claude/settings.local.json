@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app -type f -name *.tsx -o -name *.ts)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
