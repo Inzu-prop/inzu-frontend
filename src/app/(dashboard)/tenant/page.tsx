@@ -42,6 +42,10 @@ export default function TenantPortalPage() {
   >("idle");
   const [mpesaPaymentId, setMpesaPaymentId] = useState<string | null>(null);
   const [mpesaError, setMpesaError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    paymentId: string;
+    amount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (latestInvoice?.amount != null && !mpesaAmount) {
@@ -73,6 +77,10 @@ export default function TenantPortalPage() {
       });
       setMpesaPaymentId(res.paymentId);
       setMpesaStatus(res.status === "pending" ? "pending" : res.status);
+
+      if (res.status === "pending") {
+        void pollMpesaStatus(res.paymentId);
+      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Could not initiate payment.";
@@ -81,9 +89,100 @@ export default function TenantPortalPage() {
     }
   }
 
-  // Payment status polling is handled by the reusable `PaymentStatus` component.
+  async function pollMpesaStatus(paymentId: string) {
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      attempts += 1;
+      try {
+        const res = await api.mpesaPayments.getStatus(paymentId);
+        if (res.status === "success" || res.status === "failed") {
+          setMpesaStatus(res.status);
+          if (res.status === "success") {
+            void refetch();
+          }
+          return;
+        }
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : "Could not check payment status.";
+        setMpesaError(message);
+        setMpesaStatus("error");
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+
+    setMpesaStatus("error");
+    setMpesaError("Payment is still pending. Please check again later.");
+  }
+
+  function handleDismissConfirmation() {
+    setConfirmation(null);
+  }
 
   return (
+    <>
+      {confirmation && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-success-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-7 w-7 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h2
+                  id="payment-success-title"
+                  className="text-lg font-semibold text-foreground"
+                >
+                  Payment successful
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Your M-Pesa payment has been confirmed.
+                </p>
+              </div>
+              <div className="w-full rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Amount paid</span>
+                  <span className="font-semibold text-foreground">
+                    KES {Number(confirmation.amount).toLocaleString()}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Payment ID</span>
+                  <span className="break-all font-mono text-xs text-foreground">
+                    {confirmation.paymentId}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleDismissConfirmation}
+                className="mt-1 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     <Container className="py-10">
       <section className="mb-8 space-y-2">
         <h2 className="text-2xl font-semibold">Your dashboard</h2>
@@ -306,5 +405,6 @@ export default function TenantPortalPage() {
         </div>
       </section>
     </Container>
+    </>
   );
 }
