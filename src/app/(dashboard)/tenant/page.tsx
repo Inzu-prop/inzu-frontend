@@ -5,6 +5,7 @@ import Container from "@/components/container";
 import { useTenantMe } from "@/contexts/tenant-me-context";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
+import PaymentStatus from "@/components/payment-status";
 
 function formatDate(value: string | undefined): string {
   if (!value) return "—";
@@ -72,10 +73,6 @@ export default function TenantPortalPage() {
       });
       setMpesaPaymentId(res.paymentId);
       setMpesaStatus(res.status === "pending" ? "pending" : res.status);
-
-      if (res.status === "pending") {
-        void pollMpesaStatus(res.paymentId);
-      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Could not initiate payment.";
@@ -84,36 +81,7 @@ export default function TenantPortalPage() {
     }
   }
 
-  async function pollMpesaStatus(paymentId: string) {
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    while (attempts < maxAttempts) {
-      attempts += 1;
-      try {
-        const res = await api.mpesaPayments.getStatus(paymentId);
-        if (res.status === "success" || res.status === "failed") {
-          setMpesaStatus(res.status);
-          if (res.status === "success") {
-            void refetch();
-          }
-          return;
-        }
-      } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : "Could not check payment status.";
-        setMpesaError(message);
-        setMpesaStatus("error");
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
-
-    setMpesaStatus("error");
-    setMpesaError("Payment is still pending. Please check again later.");
-  }
+  // Payment status polling is handled by the reusable `PaymentStatus` component.
 
   return (
     <Container className="py-10">
@@ -264,8 +232,18 @@ export default function TenantPortalPage() {
                   Payment failed. Please try again.
                 </p>
               )}
+              {/* Reusable payment status UI handles polling and messages */}
               {mpesaError && (
                 <p className="text-xs font-medium text-destructive">{mpesaError}</p>
+              )}
+              {mpesaPaymentId && (
+                <PaymentStatus
+                  paymentId={mpesaPaymentId}
+                  onConfirmed={() => {
+                    setMpesaStatus("success");
+                    void refetch();
+                  }}
+                />
               )}
             </form>
           </div>
