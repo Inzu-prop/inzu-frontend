@@ -18,15 +18,17 @@ const REPORT_TABS = [
   { id: "comparative", label: "Comparative" },
 ] as const;
 
-// Default date range: first day of current month to today
-function getDefaultFrom() {
+function getDefaultFrom(monthly = false) {
   const d = new Date();
+  if (monthly) return d.toISOString().slice(0, 7);
   d.setDate(1);
   return d.toISOString().slice(0, 10);
 }
 
-function getDefaultTo() {
-  return new Date().toISOString().slice(0, 10);
+function getDefaultTo(monthly = false) {
+  const d = new Date();
+  if (monthly) return d.toISOString().slice(0, 7);
+  return d.toISOString().slice(0, 10);
 }
 
 export default function ReportsPage() {
@@ -63,9 +65,17 @@ export default function ReportsPage() {
       .finally(() => setLoading(false));
   };
 
+  const isMonthly = activeTab === "comparative";
+
   const handleTab = (id: (typeof REPORT_TABS)[number]["id"]) => {
+    const monthly = id === "comparative";
+    // Reset dates to the correct format when switching tab type
+    if (monthly !== isMonthly) {
+      setFrom(getDefaultFrom(monthly));
+      setTo(getDefaultTo(monthly));
+    }
     setActiveTab(id);
-    loadReport(id, from, to);
+    loadReport(id, monthly ? getDefaultFrom(monthly) : from, monthly ? getDefaultTo(monthly) : to);
   };
 
   const handleRun = () => loadReport(activeTab, from, to);
@@ -90,7 +100,7 @@ export default function ReportsPage() {
             <Label htmlFor="from-date">From</Label>
             <Input
               id="from-date"
-              type="date"
+              type={isMonthly ? "month" : "date"}
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               className="w-40"
@@ -100,7 +110,7 @@ export default function ReportsPage() {
             <Label htmlFor="to-date">To</Label>
             <Input
               id="to-date"
-              type="date"
+              type={isMonthly ? "month" : "date"}
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="w-40"
