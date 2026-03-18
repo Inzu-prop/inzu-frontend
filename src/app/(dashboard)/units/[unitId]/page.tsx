@@ -8,8 +8,27 @@ import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
-import type { Unit } from "@/lib/api";
+import type { Unit, UnitType } from "@/lib/api";
 import { ApiError } from "@/lib/api";
+
+const UNIT_TYPE_LABELS: Record<UnitType, string> = {
+  studio: "Studio",
+  one_bedroom: "1 Bedroom",
+  two_bedroom: "2 Bedrooms",
+  three_bedroom: "3 Bedrooms",
+  four_plus_bedroom: "4+ Bedrooms",
+  commercial: "Commercial",
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  occupied: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  vacant: "bg-muted text-muted-foreground",
+  maintenance: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+};
+
+function formatCurrency(n: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(n);
+}
 
 export default function UnitDetailPage() {
   const params = useParams();
@@ -22,123 +41,129 @@ export default function UnitDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!organizationId || !unitId) {
-      setLoading(false);
-      return;
-    }
+    if (!organizationId || !unitId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     api.units
       .get(unitId)
       .then((res) => {
         const withUnit = res as { unit?: Unit };
-        const extracted: Unit = withUnit.unit ?? (res as Unit);
-        setUnit(extracted);
+        setUnit(withUnit.unit ?? (res as Unit));
       })
-      .catch((err) =>
-        setError(err instanceof ApiError ? err.message : String(err)),
-      )
+      .catch((err) => setError(err instanceof ApiError ? err.message : String(err)))
       .finally(() => setLoading(false));
   }, [api.units, organizationId, unitId]);
 
   return (
     <RequireOrganization>
-      <Container className="py-6 space-y-4">
+      <Container className="py-6 space-y-6">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/units">← Units</Link>
           </Button>
+          {unit?.propertyId && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/properties/${unit.propertyId}/units`}>← Property units</Link>
+            </Button>
+          )}
         </div>
 
-        {loading && <p className="text-muted-foreground">Loading…</p>}
-        {error && (
-          <p className="text-destructive" role="alert">
-            {error}
-          </p>
+        {loading && (
+          <div className="space-y-3">
+            <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+          </div>
         )}
+        {error && <p className="text-destructive" role="alert">{error}</p>}
 
         {!loading && !error && unit && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Header */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  Unit {unit.unitNumber}
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  ID: {unit._id}
-                </p>
+                <h1 className="text-2xl font-semibold tracking-tight">Unit {unit.unitNumber}</h1>
+                <p className="mt-1 text-xs font-mono text-muted-foreground">{unit._id}</p>
               </div>
-              <div className="flex flex-col items-end gap-1 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
                 {unit.type && (
-                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                    Type: {unit.type}
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                    {UNIT_TYPE_LABELS[unit.type as UnitType] ?? unit.type}
                   </span>
                 )}
                 {unit.status && (
-                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                    Status: {unit.status}
-                  </span>
-                )}
-                {unit.rentAmount != null && (
-                  <span className="text-muted-foreground">
-                    Rent: {Number(unit.rentAmount)}
-                  </span>
-                )}
-                {unit.depositAmount != null && (
-                  <span className="text-muted-foreground">
-                    Deposit: {Number(unit.depositAmount)}
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_STYLES[unit.status] ?? "bg-muted text-muted-foreground"}`}>
+                    {unit.status}
                   </span>
                 )}
               </div>
             </div>
 
-            <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {/* Stat cards */}
+            <div className="flex flex-wrap gap-4">
+              {unit.rentAmount != null && (
+                <div className="flex-1 min-w-[130px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                  <p className="text-2xl font-bold">{formatCurrency(Number(unit.rentAmount))}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Monthly rent</p>
+                </div>
+              )}
+              {unit.depositAmount != null && (
+                <div className="flex-1 min-w-[130px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                  <p className="text-2xl font-bold">{formatCurrency(Number(unit.depositAmount))}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Deposit</p>
+                </div>
+              )}
+            </div>
+
+            {/* Details card */}
+            <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Details
               </h2>
-              <dl className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] gap-x-3 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">Unit number</dt>
-                <dd>{unit.unitNumber || "—"}</dd>
-                <dt className="text-muted-foreground">Type</dt>
-                <dd>{unit.type || "—"}</dd>
-                <dt className="text-muted-foreground">Status</dt>
-                <dd>{unit.status || "—"}</dd>
-                <dt className="text-muted-foreground">Rent</dt>
-                <dd>
-                  {unit.rentAmount != null ? Number(unit.rentAmount).toLocaleString() : "—"}
-                </dd>
-                <dt className="text-muted-foreground">Deposit</dt>
-                <dd>
-                  {unit.depositAmount != null ? Number(unit.depositAmount).toLocaleString() : "—"}
-                </dd>
-                <dt className="text-muted-foreground">Property ID</dt>
-                <dd>{unit.propertyId || "—"}</dd>
-                <dt className="text-muted-foreground">Created at</dt>
-                <dd>
-                  {"createdAt" in unit && unit.createdAt
-                    ? new Date(unit.createdAt as unknown as string).toLocaleString()
-                    : "—"}
-                </dd>
-                <dt className="text-muted-foreground">Updated at</dt>
-                <dd>
-                  {"updatedAt" in unit && unit.updatedAt
-                    ? new Date(unit.updatedAt as unknown as string).toLocaleString()
-                    : "—"}
-                </dd>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+                <div>
+                  <dt className="text-muted-foreground">Unit number</dt>
+                  <dd className="font-medium mt-0.5">{unit.unitNumber || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Type</dt>
+                  <dd className="font-medium mt-0.5">
+                    {unit.type ? (UNIT_TYPE_LABELS[unit.type as UnitType] ?? unit.type) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Status</dt>
+                  <dd className="font-medium mt-0.5 capitalize">{unit.status || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Rent</dt>
+                  <dd className="font-medium mt-0.5">
+                    {unit.rentAmount != null ? formatCurrency(Number(unit.rentAmount)) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Deposit</dt>
+                  <dd className="font-medium mt-0.5">
+                    {unit.depositAmount != null ? formatCurrency(Number(unit.depositAmount)) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Created</dt>
+                  <dd className="font-medium mt-0.5">
+                    {"createdAt" in unit && unit.createdAt
+                      ? new Date(unit.createdAt as string).toLocaleDateString()
+                      : "—"}
+                  </dd>
+                </div>
               </dl>
             </section>
 
             {unit.propertyId && (
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" asChild>
-                  <Link href={`/properties/${unit.propertyId}`}>
-                    View property
-                  </Link>
+                  <Link href={`/properties/${unit.propertyId}`}>View property</Link>
                 </Button>
                 <Button size="sm" variant="outline" asChild>
-                  <Link href={`/properties/${unit.propertyId}/units`}>
-                    View property units
-                  </Link>
+                  <Link href={`/properties/${unit.propertyId}/units`}>All units in property</Link>
                 </Button>
               </div>
             )}
@@ -148,4 +173,3 @@ export default function UnitDetailPage() {
     </RequireOrganization>
   );
 }
-
