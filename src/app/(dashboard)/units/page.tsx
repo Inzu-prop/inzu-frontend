@@ -145,7 +145,7 @@ function UnitsPageContent() {
             <p className="text-muted-foreground">No units yet.</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Add units from a{" "}
-              <Link href="/properties" className="text-primary hover:underline">property's units page</Link>.
+              <Link href="/properties" className="text-primary hover:underline">property&apos;s units page</Link>.
             </p>
           </div>
         )}

@@ -39,7 +39,7 @@ function ArrearTable({
   caption: string;
   idLabel: string;
   rows: { id: string; amountOverdue: number }[];
-  idKey: string;
+  _idKey: string;
 }) {
   if (rows.length === 0) return null;
   const total = rows.reduce((s, r) => s + r.amountOverdue, 0);
