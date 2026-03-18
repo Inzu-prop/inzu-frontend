@@ -36,7 +36,7 @@ function statusClass(status?: string): string {
       return "bg-muted text-muted-foreground";
   }
 }
-
+//
 type GenerateResult =
   | { type: "success"; data: GenerateInvoicesResponse }
   | { type: "error"; message: string };
