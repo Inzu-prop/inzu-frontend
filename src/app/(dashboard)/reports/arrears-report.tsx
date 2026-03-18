@@ -34,12 +34,10 @@ function ArrearTable({
   caption,
   idLabel,
   rows,
-  idKey,
 }: {
   caption: string;
   idLabel: string;
   rows: { id: string; amountOverdue: number }[];
-  _idKey: string;
 }) {
   if (rows.length === 0) return null;
   const total = rows.reduce((s, r) => s + r.amountOverdue, 0);
@@ -138,13 +136,11 @@ export function ArrearsReport({ data }: { data: ArrearsData }) {
         caption="By Tenant"
         idLabel="Tenant ID"
         rows={tenantRows}
-        idKey="tenantId"
       />
       <ArrearTable
         caption="By Property"
         idLabel="Property ID"
         rows={propertyRows}
-        idKey="propertyId"
       />
     </div>
   );
