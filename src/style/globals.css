@@ -35,10 +35,10 @@
 
     --destructive: var(--inzu-red);
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 94.4%;
+    --border: 220 20% 92%;
     --input: 214.3 31.8% 91.4%;
     --ring: var(--inzu-forest);
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
     /* Charts aligned with Inzu palette */
     --chart-1: var(--inzu-forest);
@@ -83,10 +83,19 @@
 
 @layer base {
   * {
-    @apply border-border;
+    box-sizing: border-box;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a {
+    @apply transition-colors duration-200;
+  }
+  button, [role="button"] {
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.19, 0.9, 0.22, 1);
   }
 }
 
@@ -123,7 +132,7 @@
     background-image: none !important;
   }
 
-  /* Ensure menu items like \"Manage account\" / \"Sign out\" are readable in light mode */
+  /* Ensure menu items like "Manage account" / "Sign out" are readable in light mode */
   .cl-userButtonPopoverActionButton,
   .cl-userButtonPopoverActionButtonText,
   .cl-organizationSwitcherPopoverActionButton,
@@ -150,5 +159,23 @@
   .cl-userPreviewSecondaryIdentifier,
   .cl-userButtonPopoverSecondaryIdentifier {
     color: hsl(var(--foreground)) !important;
+  }
+}
+
+/* ── INZU Typography utilities ─────────────────────────── */
+@layer utilities {
+  /* Large financial figures: tight tracking, tabular nums, semi-bold */
+  .num {
+    font-feature-settings: "tnum";
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  /* Luxury easing on any element */
+  .ease-luxury {
+    transition-timing-function: cubic-bezier(0.19, 0.9, 0.22, 1);
+  }
+  /* Sage accent line (left border indicator) */
+  .inzu-active-bar {
+    box-shadow: inset 2px 0 0 #90B494;
   }
 }

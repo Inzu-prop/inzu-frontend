@@ -12,10 +12,10 @@ import type { PropertyListItem, PropertyStatus, PropertyType } from "@/lib/api";
 const LIST_TIMEOUT_MS = 15000;
 
 const STATUS_STYLES: Record<PropertyStatus, string> = {
-  active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  active: "bg-[#90B494]/20 text-[#32533D] dark:bg-[#90B494]/15 dark:text-[#90B494]",
   inactive: "bg-muted text-muted-foreground",
-  under_construction: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  for_sale: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  under_construction: "bg-[#825D42]/15 text-[#825D42] dark:bg-[#825D42]/20 dark:text-[#825D42]",
+  for_sale: "bg-foreground/8 text-foreground/70",
 };
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
@@ -118,7 +118,7 @@ export default function PropertiesPage() {
             {data.map((item) => (
               <div
                 key={item._id}
-                className="flex flex-col rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+                className="flex flex-col rounded-lg border border-border bg-card transition-colors hover:border-[#90B494]/50"
               >
                 <div className="flex flex-1 flex-col p-5">
                   <div className="flex items-start justify-between gap-2">

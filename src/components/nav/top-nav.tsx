@@ -5,13 +5,15 @@ import { ClerkUserMenu } from "@/components/clerk-user-menu";
 
 export default function TopNav({ title }: { title: string }) {
   return (
-    <Container className="flex h-16 items-center justify-between bg-background/80 backdrop-blur-sm">
-      <h1 className="text-xl font-normal tracking-[0.16em] uppercase text-muted-foreground">
-        {title}
-      </h1>
-      <div className="flex items-center gap-3">
-        <ClerkUserMenu />
-      </div>
-    </Container>
+    <div className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-md">
+      <Container className="flex h-14 items-center justify-between">
+        <h1 className="text-xs font-semibold tracking-[0.2em] uppercase text-foreground/60">
+          {title}
+        </h1>
+        <div className="flex items-center gap-3">
+          <ClerkUserMenu />
+        </div>
+      </Container>
+    </div>
   );
 }

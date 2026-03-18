@@ -31,9 +31,9 @@ const UNIT_TYPE_LABELS_FULL: Record<UnitType, string> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  occupied: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  occupied: "bg-[#90B494]/20 text-[#32533D] dark:bg-[#90B494]/15 dark:text-[#90B494]",
   vacant: "bg-muted text-muted-foreground",
-  maintenance: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  maintenance: "bg-[#825D42]/15 text-[#825D42]",
 };
 
 function formatCurrency(n: number) {

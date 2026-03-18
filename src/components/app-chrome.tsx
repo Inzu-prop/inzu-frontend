@@ -17,16 +17,16 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 
   if (!loading && isTenantUser) {
     return (
-      <div className="flex min-h-[100dvh] w-full flex-col bg-background dark:bg-neutral-950">
+      <div className="flex min-h-[100dvh] w-full flex-col bg-background">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[100dvh] w-full bg-background dark:bg-neutral-950">
+    <div className="flex min-h-[100dvh] w-full bg-background">
       <SideNav />
-      <div className="flex-grow overflow-auto">{children}</div>
+      <div className="flex min-h-[100dvh] flex-1 flex-col overflow-auto">{children}</div>
     </div>
   );
 }

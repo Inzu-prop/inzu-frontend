@@ -19,10 +19,10 @@ export default function Navigation() {
             key={navigation.name}
             href={navigation.href}
             className={cn(
-              "group flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
+              "group flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm transition-colors",
               isActive
-                ? "bg-white/5 text-[hsl(var(--primary-foreground))]"
-                : "text-[hsla(var(--primary-foreground),0.7)] hover:text-[hsl(var(--primary-foreground))]",
+                ? "bg-white/10 text-[hsl(var(--primary-foreground))] inzu-active-bar"
+                : "text-[hsla(var(--primary-foreground),0.65)] hover:bg-white/5 hover:text-[hsl(var(--primary-foreground))]",
             )}
           >
             <Icon

@@ -63,6 +63,15 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        inzu: {
+          forest: "#32533D",
+          "forest-deep": "#2D4B3E",
+          sage: "#90B494",
+          obsidian: "#13270D",
+          cedar: "#825D42",
+          silk: "#F5F7F6",
+          red: "#E22026",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -82,6 +91,9 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      transitionTimingFunction: {
+        luxury: "cubic-bezier(0.19, 0.9, 0.22, 1)",
       },
     },
   },

@@ -171,7 +171,7 @@ export default function DashboardClient() {
         ],
       },
     },
-    color: ["hsl(221,83%,53%)", "hsl(142,71%,45%)"],
+    color: ["#32533D", "#90B494"],
   };
 
   return (
@@ -262,12 +262,12 @@ export default function DashboardClient() {
                             <span className="mr-1 opacity-60">Expected</span>
                             {formatKES(m.expected)}
                           </span>
-                          <span className="text-emerald-500">
+                          <span className="text-[#90B494]">
                             <span className="mr-1 opacity-60">Collected</span>
                             {formatKES(m.collected)}
                           </span>
                           {m.arrears > 0 && (
-                            <span className="text-rose-500">
+                            <span className="text-[hsl(var(--inzu-red))]">
                               <span className="mr-1 opacity-60">Arrears</span>
                               {formatKES(m.arrears)}
                             </span>

@@ -12,10 +12,10 @@ import type { Property, PropertyStatus, PropertyType } from "@/lib/api";
 import { ApiError } from "@/lib/api";
 
 const STATUS_STYLES: Record<PropertyStatus, string> = {
-  active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  active: "bg-[#90B494]/20 text-[#32533D] dark:bg-[#90B494]/15 dark:text-[#90B494]",
   inactive: "bg-muted text-muted-foreground",
-  under_construction: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  for_sale: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  under_construction: "bg-[#825D42]/15 text-[#825D42] dark:bg-[#825D42]/20 dark:text-[#825D42]",
+  for_sale: "bg-foreground/8 text-foreground/70",
 };
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
@@ -112,31 +112,31 @@ export default function PropertyDetailPage() {
             {/* Stat cards */}
             <div className="flex flex-wrap gap-4">
               {property.totalUnits != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
                   <p className="text-2xl font-bold">{property.totalUnits}</p>
                   <p className="text-xs text-muted-foreground mt-1">Total units</p>
                 </div>
               )}
               {property.totalFloors != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
                   <p className="text-2xl font-bold">{property.totalFloors}</p>
                   <p className="text-xs text-muted-foreground mt-1">Floors</p>
                 </div>
               )}
               {property.yearBuilt != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
                   <p className="text-2xl font-bold">{property.yearBuilt}</p>
                   <p className="text-xs text-muted-foreground mt-1">Year built</p>
                 </div>
               )}
               {property.purchasePrice != null && (
-                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center">
                   <p className="text-2xl font-bold">{formatCurrency(property.purchasePrice)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Purchase price</p>
                 </div>
               )}
               {property.currentValue != null && (
-                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center shadow-sm">
+                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center">
                   <p className="text-2xl font-bold">{formatCurrency(property.currentValue)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Current value</p>
                 </div>
@@ -145,7 +145,7 @@ export default function PropertyDetailPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               {/* Details */}
-              <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <section className="rounded-lg border border-border bg-card p-5">
                 <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Details
                 </h2>
@@ -168,7 +168,7 @@ export default function PropertyDetailPage() {
               </section>
 
               {/* Notes */}
-              <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <section className="rounded-lg border border-border bg-card p-5">
                 <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Notes
                 </h2>
@@ -180,7 +180,7 @@ export default function PropertyDetailPage() {
 
             {/* Documents */}
             {property.documents.length > 0 && (
-              <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <section className="rounded-lg border border-border bg-card p-5">
                 <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Documents ({property.documents.length})
                 </h2>

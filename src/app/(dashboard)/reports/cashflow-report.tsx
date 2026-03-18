@@ -40,7 +40,7 @@ export function CashflowReport({ data }: { data: CashflowData }) {
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Avg Collection Rate
           </p>
-          <p className={`mt-1 text-3xl font-bold ${avgCollectionRate >= 0.8 ? "text-green-600" : avgCollectionRate >= 0.5 ? "text-amber-500" : "text-destructive"}`}>
+          <p className={`mt-1 text-3xl font-bold ${avgCollectionRate >= 0.8 ? "text-[#32533D] dark:text-[#90B494]" : avgCollectionRate >= 0.5 ? "text-[#825D42]" : "text-destructive"}`}>
             {collectionPct}%
           </p>
         </div>
@@ -144,7 +144,7 @@ export function CashflowReport({ data }: { data: CashflowData }) {
                     <td className="px-4 py-2 font-medium">{formatPeriod(row.period)}</td>
                     <td className="px-4 py-2 text-right">{formatCurrency(row.expectedRent)}</td>
                     <td className="px-4 py-2 text-right">{formatCurrency(row.projectedCollections)}</td>
-                    <td className={`px-4 py-2 text-right font-medium ${gap < 0 ? "text-destructive" : "text-green-600"}`}>
+                    <td className={`px-4 py-2 text-right font-medium ${gap < 0 ? "text-destructive" : "text-[#32533D] dark:text-[#90B494]"}`}>
                       {gap < 0 ? "-" : "+"}{formatCurrency(Math.abs(gap))}
                     </td>
                     <td className="px-4 py-2 text-right text-muted-foreground">{rate}{rate !== "—" ? "%" : ""}</td>
@@ -157,7 +157,7 @@ export function CashflowReport({ data }: { data: CashflowData }) {
                 <td className="px-4 py-2 font-semibold">Total</td>
                 <td className="px-4 py-2 text-right font-semibold">{formatCurrency(totalExpected)}</td>
                 <td className="px-4 py-2 text-right font-semibold">{formatCurrency(totalProjected)}</td>
-                <td className={`px-4 py-2 text-right font-semibold ${totalProjected - totalExpected < 0 ? "text-destructive" : "text-green-600"}`}>
+                <td className={`px-4 py-2 text-right font-semibold ${totalProjected - totalExpected < 0 ? "text-destructive" : "text-[#32533D] dark:text-[#90B494]"}`}>
                   {totalProjected - totalExpected < 0 ? "-" : "+"}{formatCurrency(Math.abs(totalProjected - totalExpected))}
                 </td>
                 <td className="px-4 py-2 text-right text-muted-foreground">

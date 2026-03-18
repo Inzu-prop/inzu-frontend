@@ -39,7 +39,7 @@ function formatPeriod(period: string) {
 function OccupancyBar({ rate }: { rate: number }) {
   const pct = Math.round(rate * 100);
   const color =
-    pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-amber-400" : "bg-destructive";
+    pct >= 80 ? "bg-[#90B494]" : pct >= 50 ? "bg-[#825D42]" : "bg-[hsl(var(--inzu-red))]";
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
@@ -96,13 +96,13 @@ export function ComparativeReport({ data }: { data: ComparativeData }) {
         </div>
         <div className="flex-1 min-w-[150px] rounded-lg border border-border bg-card p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Collection Rate</p>
-          <p className={`mt-1 text-2xl font-bold ${collectionRate >= 80 ? "text-green-600" : collectionRate >= 50 ? "text-amber-500" : "text-destructive"}`}>
+          <p className={`mt-1 text-2xl font-bold ${collectionRate >= 80 ? "text-[#32533D] dark:text-[#90B494]" : collectionRate >= 50 ? "text-[#825D42]" : "text-destructive"}`}>
             {collectionRate.toFixed(1)}%
           </p>
         </div>
         <div className="flex-1 min-w-[150px] rounded-lg border border-border bg-card p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avg Occupancy</p>
-          <p className={`mt-1 text-2xl font-bold ${avgOccupancy >= 0.8 ? "text-green-600" : avgOccupancy >= 0.5 ? "text-amber-500" : "text-destructive"}`}>
+          <p className={`mt-1 text-2xl font-bold ${avgOccupancy >= 0.8 ? "text-[#32533D] dark:text-[#90B494]" : avgOccupancy >= 0.5 ? "text-[#825D42]" : "text-destructive"}`}>
             {(avgOccupancy * 100).toFixed(1)}%
           </p>
         </div>
