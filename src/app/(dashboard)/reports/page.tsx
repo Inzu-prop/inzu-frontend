@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrearsReport } from "./arrears-report";
 import { CashflowReport } from "./cashflow-report";
+import { ComparativeReport } from "./comparative-report";
 
 const REPORT_TABS = [
   { id: "pnl", label: "P&L" },
@@ -131,6 +132,8 @@ export default function ReportsPage() {
             <ArrearsReport data={data as Parameters<typeof ArrearsReport>[0]["data"]} />
           ) : activeTab === "cashflow" ? (
             <CashflowReport data={data as Parameters<typeof CashflowReport>[0]["data"]} />
+          ) : activeTab === "comparative" ? (
+            <ComparativeReport data={data as Parameters<typeof ComparativeReport>[0]["data"]} />
           ) : (
             <pre className="overflow-auto rounded-md border border-border bg-muted/30 p-4 text-sm">
               {JSON.stringify(data, null, 2)}
