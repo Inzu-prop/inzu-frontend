@@ -21,7 +21,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-gabarito)", ...fontFamily.sans],
+        sans: ["Be Vietnam Pro", "var(--font-gabarito)", ...fontFamily.sans],
       },
       screens: {
         phone: "370px",
@@ -65,7 +65,7 @@ const config = {
         },
         inzu: {
           forest: "#32533D",
-          "forest-deep": "#2D4B3E",
+          "forest-deep": "#32533D",
           sage: "#90B494",
           obsidian: "#13270D",
           cedar: "#825D42",

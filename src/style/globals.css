@@ -5,8 +5,16 @@
 
 @layer base {
   :root {
+    /* ── Brand tokens (direct hex, used in inline styles and utilities) ── */
+    --color-sidebar-bg: #13270D;
+    --color-sidebar-border: rgba(144, 180, 148, 0.15);
+    --color-brand-primary: #32533D;
+    --color-brand-accent: #90B494;
+    --color-app-bg: #F5F7F6;
+    --color-danger: #E22026;
+
     /* Inzu brand tokens (HSL, used via hsl(var(--token))) */
-    --inzu-forest: 151 26% 24%; /* #2D4B3E – Deep Forest Green (structural chassis) */
+    --inzu-forest: 134 24% 27%; /* #32533D – Forest Green (brand primary) */
     --inzu-silk: 150 14% 96%; /* #F5F7F6 – Silver Silk background */
     --inzu-red: 359 80% 51%; /* #E22026 – Pininfarina accent red */
     --inzu-bg-dark: 106 50% 10%; /* #13270D – deep green for dark surfaces */
@@ -50,7 +58,7 @@
 
   .dark {
     /* Inzu dark background & surfaces — deeper obsidian */
-    --background: 106 52% 7%; /* #0D1A10 — richer than original #13270D */
+    --background: 106 50% 10%; /* #13270D — deep obsidian */
     --foreground: 210 40% 98%;
     --card: 106 40% 11%; /* recessed surface — depth without border */
     --card-foreground: 210 40% 98%;
@@ -86,6 +94,8 @@
     box-sizing: border-box;
   }
   body {
+    font-family: "Be Vietnam Pro", sans-serif;
+    font-weight: 400;
     @apply bg-background text-foreground antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
