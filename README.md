@@ -1,93 +1,52 @@
-# VisActor Next.js Dashboard Template
+# INZU
 
-A modern dashboard template built with [VisActor](https://visactor.io/) and Next.js, featuring a beautiful UI and rich data visualization components.
+**Property management, built for Nairobi.**
 
-[Live Demo](https://visactor-next-template.vercel.app/)
+INZU is a landlord dashboard and tenant portal for managing residential and commercial properties in Kenya. Track rent collection, monitor arrears, handle maintenance, and give tenants a clean self-service experience — all in one place.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-description=A%20modern%20dashboard%20with%20VisActor%20charts%2C%20dark%20mode%2C%20and%20data%20visualization%20for%20seamless%20analytics.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F646TLqKGSTOnp1CD1IUqoM%2Fa119adac1f5a844f9d42f807ddc075f5%2Fthumbnail.png&demo-title=VisActor%20Next.js%20Template&demo-url=https%3A%2F%2Fvisactor-next-template.vercel.app%2F&from=templates&project-name=VisActor%20Next.js%20Template&repository-name=visactor-nextjs-template&repository-url=https%3A%2F%2Fgithub.com%2Fmengxi-ream%2Fvisactor-next-template&skippable-integrations=1)
+---
 
-## Features
+## What it does
 
-- 📊 **Rich Visualizations** - Powered by VisActor, including bar charts, gauge charts, circle packing charts, and more
-- 🌗 **Dark Mode** - Seamless dark/light mode switching with system preference support
-- 📱 **Responsive Design** - Fully responsive layout that works on all devices
-- 🎨 **Beautiful UI** - Modern and clean interface built with Tailwind CSS
-- ⚡️ **Next.js 15** - Built on the latest Next.js features and best practices
-- 🔄 **State Management** - Efficient state management with Jotai
-- 📦 **Component Library** - Includes Shadcn components styled with Tailwind
+- **Dashboard** — Net collection, occupancy rate, monthly trends at a glance
+- **Properties & Units** — Add properties, manage units, track vacancies
+- **Tenants** — Onboard tenants, send portal invites, view lease details
+- **Invoices & Payments** — Auto-generate rent invoices, reconcile M-Pesa payments
+- **Maintenance** — Log and track repair tickets across all units
+- **Reports** — P&L, arrears aging, cashflow, period comparisons
+- **Tenant Portal** — Tenants see their invoices, payment history, and raise tickets
 
-## Tech Stack
+---
 
-- [Next.js](https://nextjs.org/) - React framework
-- [VisActor](https://visactor.io/) - Visualization library
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Shadcn](https://ui.shadcn.com/) - UI components
-- [Jotai](https://jotai.org/) - State management
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
+## Stack
 
-## Quick Start
+- **Next.js 15** — App Router, server + client components
+- **React 19**
+- **Clerk** — Authentication and organization management
+- **Jotai** — Lightweight atom-based state
+- **Tailwind CSS v3** — Custom `inzu.*` color tokens
+- **VisActor** — Charts and data visualization
+- **Shadcn/Radix UI** — Accessible UI primitives
 
-You can deploy this template to Vercel by clicking the button above, or clone this repository and run it locally.
+---
 
-[Github Repo](https://github.com/mengxi-ream/visactor-next-template)
-
-1. Clone this repository
-
-```bash
-git clone https://github.com/mengxi-ream/visactor-next-template
-```
-
-2. Install dependencies
+## Getting started
 
 ```bash
-pnpm install
+npm install
+npm run dev
 ```
 
-3. Run the development server
+Create a `.env.local` with:
 
-```bash
-pnpm dev
+```
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_key
+CLERK_SECRET_KEY=your_secret
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-## Project Structure
+## Design
 
-```bash
-src/
-├── app/ # App router pages
-├── components/ # React components
-│ ├── chart-blocks/ # Chart components
-│ ├── nav/ # Navigation components
-│ └── ui/ # UI components
-├── config/ # Configuration files
-├── data/ # Sample data
-├── hooks/ # Custom hooks
-├── lib/ # Utility functions
-├── style/ # Global style
-└── types/ # TypeScript types
-```
-
-## Charts
-
-This template includes several chart examples:
-
-- Average Tickets Created (Bar Chart)
-- Ticket by Channels (Gauge Chart)
-- Conversions (Circle Packing Chart)
-- Customer Satisfaction (Linear Progress)
-- Metrics Overview
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- [VisActor](https://visactor.io/) - For the amazing visualization library
-- [Vercel](https://vercel.com) - For the incredible deployment platform
-- [Next.js](https://nextjs.org/) - For the awesome React framework
+INZU follows a strict minimalist aesthetic — one focal point per screen, no decorative borders, weight-only status indicators, and a deep forest-green palette. The full design philosophy is documented in `blueprint.md`.
