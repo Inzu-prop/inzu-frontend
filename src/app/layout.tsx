@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
   icons: {
-    icon: "/izufavicon.png",
+    icon: "/inzu_logo_favicon.svg",
   },
 };
 

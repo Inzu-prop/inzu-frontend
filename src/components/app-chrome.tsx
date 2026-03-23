@@ -26,7 +26,12 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-[100dvh] w-full bg-background">
       <SideNav />
-      <div className="flex min-h-[100dvh] flex-1 flex-col overflow-auto">{children}</div>
+      <div
+        className="flex min-h-[100dvh] flex-1 flex-col overflow-auto"
+        style={{ paddingLeft: "64px", transition: "padding-left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
