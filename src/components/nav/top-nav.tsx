@@ -5,9 +5,29 @@ import { ClerkUserMenu } from "@/components/clerk-user-menu";
 
 export default function TopNav({ title }: { title: string }) {
   return (
-    <div className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-md">
+    <div
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
+        /* Fully dissolves into the page background — no chrome seam */
+        background: "transparent",
+        backdropFilter: "none",
+        borderBottom: "none",
+      }}
+    >
       <Container className="flex h-14 items-center justify-between">
-        <h1 className="text-xs font-semibold tracking-[0.2em] uppercase text-foreground/60">
+        <h1
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: 500,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: "rgba(var(--foreground-rgb, 34,40,49), 0.38)",
+            /* foreground-rgb fallback — resolved below via Tailwind */
+          }}
+          className="text-foreground/35"
+        >
           {title}
         </h1>
         <div className="flex items-center gap-3">

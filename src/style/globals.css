@@ -15,7 +15,7 @@
     /* Semantic tokens – light mode */
     --background: var(--inzu-silk);
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 151 18% 97%; /* very slightly tinted silk — depth without borders */
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -49,10 +49,10 @@
   }
 
   .dark {
-    /* Inzu dark background & surfaces */
-    --background: var(--inzu-bg-dark);
+    /* Inzu dark background & surfaces — deeper obsidian */
+    --background: 106 52% 7%; /* #0D1A10 — richer than original #13270D */
     --foreground: 210 40% 98%;
-    --card: 106 40% 13%; /* slightly lighter than background */
+    --card: 106 40% 11%; /* recessed surface — depth without border */
     --card-foreground: 210 40% 98%;
     --popover: 106 40% 13%;
     --popover-foreground: 210 40% 98%;
@@ -89,6 +89,19 @@
     @apply bg-background text-foreground antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Subtle grain overlay — makes surfaces feel physical */
+    position: relative;
+  }
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    opacity: 0.032;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
   }
   a {
     @apply transition-colors duration-200;
@@ -96,6 +109,22 @@
   button, [role="button"] {
     @apply transition-all duration-200;
     transition-timing-function: cubic-bezier(0.19, 0.9, 0.22, 1);
+  }
+
+  /* ── Invisible scrollbar ─── */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(144, 180, 148, 0.18);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(144, 180, 148, 0.35);
   }
 }
 
@@ -162,13 +191,31 @@
   }
 }
 
+/* ── Skeleton shimmer ──────────────────────────────────── */
+@keyframes inzu-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* ── Staggered entrance animation ─────────────────────── */
+@keyframes inzu-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ── INZU Typography utilities ─────────────────────────── */
 @layer utilities {
   /* Large financial figures: tight tracking, tabular nums, semi-bold */
   .num {
     font-feature-settings: "tnum";
-    letter-spacing: -0.02em;
-    font-weight: 600;
+    letter-spacing: -0.04em;
+    font-weight: 700;
   }
   /* Luxury easing on any element */
   .ease-luxury {
@@ -177,5 +224,59 @@
   /* Sage accent line (left border indicator) */
   .inzu-active-bar {
     box-shadow: inset 2px 0 0 #90B494;
+  }
+  /* Staggered card entrance */
+  .inzu-entrance {
+    opacity: 0;
+    animation: inzu-fade-up 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .inzu-entrance-1 { animation-delay: 0ms; }
+  .inzu-entrance-2 { animation-delay: 60ms; }
+  .inzu-entrance-3 { animation-delay: 120ms; }
+  .inzu-entrance-4 { animation-delay: 180ms; }
+  .inzu-entrance-5 { animation-delay: 240ms; }
+  .inzu-entrance-6 { animation-delay: 300ms; }
+
+  /* Premium card surface — depth without borders */
+  .inzu-card {
+    background: rgba(50, 83, 61, 0.10);
+    box-shadow: inset 0 1px 0 rgba(144, 180, 148, 0.08);
+    border: none;
+  }
+
+  /* Table rows — no grid lines, hover breath */
+  .inzu-row {
+    border-bottom: none;
+    transition: background 200ms cubic-bezier(0.19, 0.9, 0.22, 1);
+  }
+  .inzu-row:hover {
+    background: rgba(144, 180, 148, 0.06);
+  }
+
+  /* Primary KPI figure */
+  .inzu-kpi {
+    font-size: clamp(48px, 6vw, 72px);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-feature-settings: "tnum";
+    line-height: 1;
+    color: #F5F7F6;
+  }
+
+  /* Status typography — weight-only, no pills */
+  .status-paid    { color: #90B494; font-weight: 500; }
+  .status-overdue { color: #E22026; font-weight: 500; }
+  .status-pending { color: rgba(245, 247, 246, 0.4); font-weight: 400; }
+
+  /* Empty state container */
+  .inzu-empty {
+    border: 1px dashed rgba(144, 180, 148, 0.20);
+    border-radius: 16px;
+    padding: 48px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
   }
 }

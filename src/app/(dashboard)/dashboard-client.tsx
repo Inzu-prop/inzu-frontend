@@ -47,6 +47,14 @@ export default function DashboardClient() {
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setVisible(true))
+    );
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     if (!organizationId) {
@@ -59,12 +67,8 @@ export default function DashboardClient() {
 
     const now = new Date();
     const fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const toMonth = `${now.getUTCFullYear()}-${String(
-      now.getUTCMonth() + 1,
-    ).padStart(2, "0")}`;
-    const fromMonth = `${fromDate.getUTCFullYear()}-${String(
-      fromDate.getUTCMonth() + 1,
-    ).padStart(2, "0")}`;
+    const toMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    const fromMonth = `${fromDate.getUTCFullYear()}-${String(fromDate.getUTCMonth() + 1).padStart(2, "0")}`;
 
     Promise.all([
       api.dashboard
@@ -88,10 +92,7 @@ export default function DashboardClient() {
   }, [api.dashboard, organizationId]);
 
   const formatLabel = (raw: string) =>
-    raw
-      .replace(/([A-Z])/g, " $1")
-      .replace(/_/g, " ")
-      .trim();
+    raw.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim();
 
   const formatValue = (key: string, value: unknown): string => {
     if (value === null || value === undefined) return "—";
@@ -113,10 +114,7 @@ export default function DashboardClient() {
     ) as [string, number][];
 
     if (numericEntries.length === 0) {
-      return {
-        primary: (entries[0] as [string, unknown]) ?? null,
-        rest: entries.slice(1),
-      };
+      return { primary: (entries[0] as [string, unknown]) ?? null, rest: entries.slice(1) };
     }
 
     const [primary, ...restNumeric] = numericEntries;
@@ -127,7 +125,6 @@ export default function DashboardClient() {
   };
 
   const { primary, rest } = extractMetrics(summary);
-
   const monthly = trends?.monthly ?? [];
 
   const chartSpec: IBarChartSpec = {
@@ -145,20 +142,31 @@ export default function DashboardClient() {
     yField: "value",
     seriesField: "category",
     padding: { top: 8, bottom: 8, left: 0, right: 0 },
+    background: "transparent",
     bar: { style: { cornerRadius: [4, 4, 0, 0] } },
-    legends: { visible: true, orient: "top", padding: { bottom: 12 } },
+    legends: {
+      visible: true,
+      orient: "top",
+      padding: { bottom: 12 },
+      label: { style: { fontSize: 11, fill: "rgba(245,247,246,0.5)" } },
+    },
     axes: [
       {
         orient: "left",
+        domainLine: { visible: false },
+        grid: { style: { stroke: "rgba(144,180,148,0.08)", lineDash: [] } },
         label: {
-          formatMethod: (val: unknown) =>
-            `KES ${Number(val).toLocaleString()}`,
-          style: { fontSize: 10 },
+          formatMethod: (val: unknown) => `KES ${Number(val).toLocaleString()}`,
+          style: { fontSize: 9, fill: "rgba(245,247,246,0.35)" },
         },
+        tick: { visible: false },
       },
       {
         orient: "bottom",
-        label: { style: { fontSize: 10 } },
+        domainLine: { visible: false },
+        grid: { visible: false },
+        label: { style: { fontSize: 9, fill: "rgba(245,247,246,0.35)" } },
+        tick: { visible: false },
       },
     ],
     tooltip: {
@@ -171,63 +179,146 @@ export default function DashboardClient() {
         ],
       },
     },
-    color: ["#32533D", "#90B494"],
+    color: ["#2D4B3E", "#90B494"],
   };
+
+  // Skeleton shimmer bars
+  if (loading) {
+    return (
+      <Container className="py-8">
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                height: i === 1 ? 72 : 20,
+                borderRadius: 12,
+                background: "rgba(144,180,148,0.06)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.10) 50%, transparent 100%)",
+                  animation: "inzu-shimmer 1.6s infinite",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <RequireOrganization>
       <Container className="space-y-8 py-8">
-        <section className="space-y-2">
-          <p className="text-xs font-normal uppercase tracking-[0.18em] text-muted-foreground">
+        {/* Page label */}
+        <section
+          className={visible ? "inzu-entrance inzu-entrance-1" : ""}
+          style={{ opacity: 0 }}
+        >
+          <p
+            style={{
+              fontSize: "0.62rem",
+              fontWeight: 400,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "rgba(245,247,246,0.35)",
+            }}
+            className="text-muted-foreground"
+          >
             Overview
-          </p>
-          <p className="max-w-xl text-sm text-muted-foreground">
-            One primary truth about your portfolio, with supporting signals in
-            the background.
           </p>
         </section>
 
-        {loading && (
-          <p className="text-sm text-muted-foreground">Loading dashboard…</p>
-        )}
         {error && (
-          <p className="text-destructive" role="alert">
+          <p className="text-destructive text-sm" role="alert">
             {error}
           </p>
         )}
 
-        {!loading && !error && (
-          <section className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
-            {/* Summary panel */}
-            <div className="space-y-6 rounded-3xl bg-card/80 px-6 py-5 shadow-none backdrop-blur-sm">
-              <div className="space-y-2">
-                <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
-                  Primary truth
+        {!error && (
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
+
+            {/* ── Primary truth panel ────────────────────────────── */}
+            <div
+              className={`inzu-card rounded-3xl px-7 py-6 space-y-6 ${visible ? "inzu-entrance inzu-entrance-2" : ""}`}
+              style={{ opacity: 0 }}
+            >
+              <div className="space-y-3">
+                <p
+                  style={{
+                    fontSize: "0.60rem",
+                    fontWeight: 400,
+                    letterSpacing: "0.24em",
+                    textTransform: "uppercase",
+                  }}
+                  className="text-muted-foreground"
+                >
+                  Net Collection
                 </p>
                 {primary ? (
                   <>
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    <p
+                      style={{
+                        fontSize: "0.60rem",
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                      }}
+                      className="text-muted-foreground"
+                    >
                       {formatLabel(primary[0])}
                     </p>
-                    <p className="mt-1 text-5xl font-semibold tracking-[-0.02em] tabular-nums">
+                    {/* Single truth — the KPI number */}
+                    <p className="inzu-kpi">
                       {formatValue(primary[0], primary[1])}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No primary metric available yet.
-                  </p>
+                  <div className="inzu-empty">
+                    <p className="text-sm text-muted-foreground">No data yet</p>
+                    <button className="mt-1 text-xs font-medium text-[#90B494] underline underline-offset-4">
+                      Add a property to begin
+                    </button>
+                  </div>
                 )}
               </div>
 
+              {/* Supporting metrics — weight contrast, no grid lines */}
               {rest.length > 0 && (
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm md:grid-cols-3">
-                  {rest.slice(0, 6).map(([key, value]) => (
-                    <div key={key} className="space-y-1">
-                      <dt className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+                <dl
+                  style={{ paddingTop: "20px", borderTop: "1px solid rgba(144,180,148,0.08)" }}
+                  className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3"
+                >
+                  {rest.slice(0, 6).map(([key, value], i) => (
+                    <div
+                      key={key}
+                      className={`space-y-1 ${visible ? `inzu-entrance inzu-entrance-${Math.min(i + 3, 6)}` : ""}`}
+                      style={{ opacity: 0 }}
+                    >
+                      <dt
+                        style={{
+                          fontSize: "0.60rem",
+                          letterSpacing: "0.18em",
+                          textTransform: "uppercase",
+                        }}
+                        className="text-muted-foreground"
+                      >
                         {formatLabel(key)}
                       </dt>
-                      <dd className="font-normal">
+                      <dd
+                        style={{
+                          fontSize: "1rem",
+                          fontWeight: 600,
+                          letterSpacing: "-0.02em",
+                          fontFeatureSettings: '"tnum"',
+                        }}
+                        className="text-foreground"
+                      >
                         {formatValue(key, value)}
                       </dd>
                     </div>
@@ -236,44 +327,63 @@ export default function DashboardClient() {
               )}
             </div>
 
-            {/* Trends panel */}
-            <div className="space-y-4 rounded-3xl bg-card/70 px-6 py-5 shadow-none">
-              <p className="text-[0.68rem] font-normal uppercase tracking-[0.25em] text-muted-foreground">
+            {/* ── Monthly trends panel ───────────────────────────── */}
+            <div
+              className={`inzu-card rounded-3xl px-7 py-6 space-y-5 ${visible ? "inzu-entrance inzu-entrance-3" : ""}`}
+              style={{ opacity: 0 }}
+            >
+              <p
+                style={{
+                  fontSize: "0.60rem",
+                  fontWeight: 400,
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
+                }}
+                className="text-muted-foreground"
+              >
                 Monthly trends
               </p>
 
               {monthly.length > 0 ? (
                 <>
+                  {/* Chart — floats in bg, no fill */}
                   <div className="h-52">
                     <VChart spec={chartSpec} options={{ autoFit: true }} />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* Row list — no grid lines, hover breath */}
+                  <div>
                     {monthly.map((m) => (
                       <div
                         key={m.period.period}
-                        className="flex items-center justify-between rounded-xl bg-background/50 px-4 py-3 text-xs"
+                        className="inzu-row flex items-center justify-between px-2 py-3 text-xs"
+                        style={{ paddingTop: 14, paddingBottom: 14 }}
                       >
-                        <span className="font-medium text-muted-foreground">
+                        <span
+                          style={{ fontWeight: 500, letterSpacing: "0.02em" }}
+                          className="text-muted-foreground"
+                        >
                           {m.period.period}
                         </span>
-                        <div className="flex gap-4 tabular-nums">
+                        <div
+                          className="flex gap-5 tabular-nums"
+                          style={{ fontFeatureSettings: '"tnum"' }}
+                        >
                           <span className="text-muted-foreground">
-                            <span className="mr-1 opacity-60">Expected</span>
+                            <span style={{ opacity: 0.45, marginRight: 4 }}>Exp</span>
                             {formatKES(m.expected)}
                           </span>
-                          <span className="text-[#90B494]">
-                            <span className="mr-1 opacity-60">Collected</span>
+                          <span style={{ color: "#90B494", fontWeight: 500 }}>
+                            <span style={{ opacity: 0.55, marginRight: 4, fontWeight: 400 }}>Col</span>
                             {formatKES(m.collected)}
                           </span>
                           {m.arrears > 0 && (
-                            <span className="text-[hsl(var(--inzu-red))]">
-                              <span className="mr-1 opacity-60">Arrears</span>
+                            <span className="status-overdue">
                               {formatKES(m.arrears)}
                             </span>
                           )}
                           <span className="text-muted-foreground">
-                            <span className="mr-1 opacity-60">Occ.</span>
+                            <span style={{ opacity: 0.45, marginRight: 4 }}>Occ</span>
                             {formatPct(m.occupancyRate)}
                           </span>
                         </div>
@@ -282,9 +392,9 @@ export default function DashboardClient() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No trends data available yet.
-                </p>
+                <div className="inzu-empty">
+                  <p className="text-sm text-muted-foreground">No trends data yet</p>
+                </div>
               )}
             </div>
           </section>
