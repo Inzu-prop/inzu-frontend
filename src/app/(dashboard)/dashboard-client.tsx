@@ -148,7 +148,7 @@ export default function DashboardClient() {
       visible: true,
       orient: "top",
       padding: { bottom: 12 },
-      label: { style: { fontSize: 11, fill: "rgba(245,247,246,0.5)" } },
+      item: { label: { style: { fontSize: 11, fill: "rgba(245,247,246,0.5)" } } },
     },
     axes: [
       {
