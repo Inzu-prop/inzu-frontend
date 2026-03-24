@@ -351,11 +351,11 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     settings: {
       get: () =>
-        request<SettingsGetResponse>("GET", "settings:get", {
+        request<SettingsGetResponse>("GET", "./settings:get", {
           params: { organizationId: deps.getOrganizationId() ?? "" },
         }),
       update: (body: Partial<OrgSettings>) =>
-        request<SettingsGetResponse>("POST", "settings:update", {
+        request<SettingsGetResponse>("POST", "./settings:update", {
           body,
           params: { organizationId: deps.getOrganizationId() ?? "" },
         }),
