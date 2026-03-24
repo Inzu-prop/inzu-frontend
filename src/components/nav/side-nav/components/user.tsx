@@ -1,32 +1,47 @@
 "use client";
 
 import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { ClerkOrganizationMenu } from "@/components/clerk-organization-menu";
 
-export default function User({ expanded = true }: { expanded?: boolean }) {
+interface UserProps {
+  expanded?: boolean;
+  mobileOpen?: boolean;
+}
+
+export default function User({ expanded = true, mobileOpen = false }: UserProps) {
+  const showLabel = expanded || mobileOpen;
+
   return (
-    <div
-      className={cn(
-        "flex h-16 items-center gap-2 px-3 py-2 transition-all duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
-        !expanded && "laptop:justify-center laptop:px-0",
-      )}
-    >
-      <Image
-        src="/logo.png"
-        alt="Inzu logo"
-        width={28}
-        height={28}
-        priority
-        className="shrink-0"
-      />
+    <div className="flex items-center gap-3 px-3 py-5" style={{ minHeight: 64 }}>
+      {/* Favicon — always visible */}
+      <div style={{ width: 36, height: 36, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Image
+          src="/inzu_logo_favicon.svg"
+          alt="INZU"
+          width={28}
+          height={28}
+          priority
+          style={{ objectFit: "contain" }}
+        />
+      </div>
+
+      {/* Typeface wordmark — fades in when expanded */}
       <div
-        className={cn(
-          "overflow-hidden transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
-          expanded ? "max-w-[160px] opacity-100" : "laptop:max-w-0 laptop:opacity-0",
-        )}
+        style={{
+          opacity: showLabel ? 1 : 0,
+          transition: "opacity 0.2s ease 0.15s",
+          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+        }}
       >
-        <ClerkOrganizationMenu />
+        <Image
+          src="/inzu_logo_typeface.svg"
+          alt="INZU"
+          width={72}
+          height={18}
+          priority
+          style={{ objectFit: "contain", objectPosition: "left center" }}
+        />
       </div>
     </div>
   );
