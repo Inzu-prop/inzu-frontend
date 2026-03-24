@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { DashboardGate } from "@/components/dashboard-gate";
 
 export default function DashboardLayout({
