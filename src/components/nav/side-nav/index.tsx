@@ -1,31 +1,24 @@
 "use client";
 
-import { ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { cn } from "@/lib/utils";
+import { mobileNavOpenAtom } from "@/lib/atoms";
 import Navigation from "./components/navigation";
 import User from "./components/user";
 import InzuProp from "./components/inzuprop";
 
 export default function SideNav() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useAtom(mobileNavOpenAtom);
 
   return (
     <>
-      <button
-        className={cn(
-          "fixed left-0 top-12 z-50 rounded-r-md bg-[hsl(var(--inzu-forest))] px-2 py-1.5 text-[hsl(var(--primary-foreground))] tablet:hidden",
-          "transition-transform duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
-          isOpen ? "translate-x-44" : "translate-x-0",
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? (
-          <ArrowLeftToLine size={16} />
-        ) : (
-          <ArrowRightToLine size={16} />
-        )}
-      </button>
+      {/* Backdrop — mobile only */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 tablet:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
       <aside
         className={cn(
           "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] w-48 shrink-0 flex-col bg-[hsl(var(--inzu-forest))] tablet:sticky tablet:translate-x-0",
@@ -34,7 +27,7 @@ export default function SideNav() {
         )}
       >
         <User />
-        <Navigation />
+        <Navigation onNavigate={() => setIsOpen(false)} />
         <InzuProp />
       </aside>
     </>

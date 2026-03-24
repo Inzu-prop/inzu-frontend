@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { navigations } from "@/config/site";
 import { cn } from "@/lib/utils";
 
-export default function Navigation() {
+export default function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-grow flex-col gap-y-1 px-3 pb-4 pt-2">
@@ -18,6 +18,7 @@ export default function Navigation() {
           <Link
             key={navigation.name}
             href={navigation.href}
+            onClick={onNavigate}
             className={cn(
               "group flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm transition-colors",
               isActive
