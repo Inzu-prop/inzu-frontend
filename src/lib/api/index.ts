@@ -3,6 +3,8 @@ export {
   createInzuApiClient,
   type InzuApiClient,
   type InzuApiDeps,
+  type OrgSettings,
+  type SettingsGetResponse,
 } from "./client";
 export type {
   CreatePropertyBody,

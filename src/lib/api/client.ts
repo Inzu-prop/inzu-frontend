@@ -26,8 +26,25 @@ export type SendPortalInviteResponse = {
   alreadyHasAccess?: boolean;
 };
 
+export type OrgSettings = {
+  currency: string;
+  timezone: string;
+  fiscalYearStart: string;
+  invoiceNumberPrefix: string;
+  paymentNumberPrefix: string;
+  autoGenerateInvoices: boolean;
+  defaultPaymentTerms: number;
+  defaultRentDueDay: number;
+  defaultLateFeeAmount: number;
+  defaultLateFeeAfterDays: number;
+};
+
+export type SettingsGetResponse = {
+  settings: OrgSettings;
+};
+
 export type AuthMeResponse = {
-  user?: { role?: string; [key: string]: unknown };
+  user?: { role?: string; permissions?: string[]; [key: string]: unknown };
   organizations?: { _id: string; [key: string]: unknown }[];
   tenant?: {
     _id: string;
@@ -315,6 +332,17 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         request<unknown>("GET", "organizations/:organizationId/reports/cashflow", { params }),
       comparative: (params?: Record<string, string>) =>
         request<unknown>("GET", "organizations/:organizationId/reports/comparative", { params }),
+    },
+    settings: {
+      get: () =>
+        request<SettingsGetResponse>("GET", "settings:get", {
+          params: { organizationId: deps.getOrganizationId() ?? "" },
+        }),
+      update: (body: Partial<OrgSettings>) =>
+        request<SettingsGetResponse>("POST", "settings:update", {
+          body,
+          params: { organizationId: deps.getOrganizationId() ?? "" },
+        }),
     },
   };
 }
