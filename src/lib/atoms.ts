@@ -10,6 +10,9 @@ export const selectedOrganizationIdAtom = atom<string | null>(null);
 /** Controls whether the mobile nav drawer is open. */
 export const mobileNavOpenAtom = atom(false);
 
+/** Controls whether the desktop sidebar is expanded (true) or icon-only (false). */
+export const desktopSidebarExpandedAtom = atom(false);
+
 const defaultStartDate = new Date(2023, 11, 18);
 
 export const dateRangeAtom = atom<DateRange | undefined>({
