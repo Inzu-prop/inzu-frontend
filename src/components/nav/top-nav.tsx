@@ -23,7 +23,7 @@ export default function TopNav({ title }: { title: string }) {
       <Container className="flex h-14 items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            className="tablet:hidden text-foreground/50 hover:text-foreground transition-colors"
+            className="laptop:hidden text-foreground/50 hover:text-foreground transition-colors"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation menu"
           >

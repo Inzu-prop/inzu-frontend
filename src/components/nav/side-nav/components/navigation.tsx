@@ -27,7 +27,7 @@ export default function Navigation({ onNavigate, expanded = true }: NavigationPr
             title={!expanded ? navigation.name : undefined}
             className={cn(
               "group flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm transition-colors duration-200",
-              !expanded && "tablet:justify-center tablet:px-0",
+              !expanded && "laptop:justify-center laptop:px-0",
               isActive
                 ? "bg-white/10 text-[hsl(var(--primary-foreground))] inzu-active-bar"
                 : "text-[hsla(var(--primary-foreground),0.65)] hover:bg-white/5 hover:text-[hsl(var(--primary-foreground))]",
@@ -43,7 +43,7 @@ export default function Navigation({ onNavigate, expanded = true }: NavigationPr
             <span
               className={cn(
                 "whitespace-nowrap tracking-[0.08em] uppercase overflow-hidden transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.19,0.9,0.22,1)]",
-                expanded ? "max-w-[160px] opacity-100" : "tablet:max-w-0 tablet:opacity-0",
+                expanded ? "max-w-[160px] opacity-100" : "laptop:max-w-0 laptop:opacity-0",
               )}
             >
               {navigation.name}
