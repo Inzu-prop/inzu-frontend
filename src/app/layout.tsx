@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { AppChrome } from "@/components/app-chrome";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import "@/style/globals.css";
 import { Providers } from "./providers";
 
-const inzuFont = Plus_Jakarta_Sans({
+const inzuFont = Be_Vietnam_Pro({
   subsets: ["latin"],
   variable: "--font-gabarito",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
 });
 
 export const metadata: Metadata = {
