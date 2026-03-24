@@ -8,12 +8,31 @@ interface UserProps {
 }
 
 export default function User({ expanded = true, mobileOpen = false }: UserProps) {
-  const showLabel = expanded || mobileOpen;
+  const showFull = expanded || mobileOpen;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-5" style={{ minHeight: 64 }}>
-      {/* Favicon — always visible */}
-      <div style={{ width: 36, height: 36, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: showFull ? "flex-start" : "center",
+        padding: "20px 12px",
+        minHeight: 64,
+        transition: "justify-content 0.3s ease",
+      }}
+    >
+      {/* Favicon — visible only when collapsed */}
+      <div
+        style={{
+          opacity: showFull ? 0 : 1,
+          transition: "opacity 0.2s ease",
+          position: showFull ? "absolute" : "relative",
+          pointerEvents: showFull ? "none" : "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Image
           src="/inzu_logo_favicon.svg"
           alt="INZU"
@@ -24,12 +43,13 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
         />
       </div>
 
-      {/* Typeface wordmark — fades in when expanded */}
+      {/* Typeface wordmark — visible only when expanded */}
       <div
         style={{
-          opacity: showLabel ? 1 : 0,
-          transition: "opacity 0.2s ease 0.15s",
-          whiteSpace: "nowrap",
+          opacity: showFull ? 1 : 0,
+          transition: "opacity 0.2s ease 0.12s",
+          position: showFull ? "relative" : "absolute",
+          pointerEvents: showFull ? "auto" : "none",
           display: "flex",
           alignItems: "center",
         }}
@@ -37,8 +57,8 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
         <Image
           src="/inzu_logo_typeface.svg"
           alt="INZU"
-          width={72}
-          height={18}
+          width={80}
+          height={20}
           priority
           style={{ objectFit: "contain", objectPosition: "left center" }}
         />
