@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     icon: "/inzu_logo_favicon.svg",
   },
 };
-
+//
 export default function RootLayout({
   children,
 }: Readonly<{
