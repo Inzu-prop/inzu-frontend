@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import { ApiError } from "@/lib/api";
-import type { OrgSettings } from "@/lib/api";
+import type { ArrearsSettings, OrgSettings } from "@/lib/api";
 
 const inputClassName =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
@@ -105,6 +105,47 @@ function BooleanField({
   );
 }
 
+function SelectField<T extends string>({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  canEdit,
+}: {
+  id: string;
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  canEdit: boolean;
+}) {
+  const displayLabel = options.find((o) => o.value === value)?.label ?? value;
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium">
+        {label}
+      </label>
+      {canEdit ? (
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value as T)}
+          className={inputClassName}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div className={readOnlyClassName}>{displayLabel}</div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const api = useInzuApi();
   const { data: authData, loading: authLoading } = useAuthMe();
@@ -126,6 +167,18 @@ export default function SettingsPage() {
   const [defaultRentDueDay, setDefaultRentDueDay] = useState("1");
   const [defaultLateFeeAmount, setDefaultLateFeeAmount] = useState("0");
   const [defaultLateFeeAfterDays, setDefaultLateFeeAfterDays] = useState("5");
+
+  // Arrears & Reminders
+  const [autoSendReminders, setAutoSendReminders] = useState(true);
+  const [reminderChannels, setReminderChannels] = useState<ArrearsSettings["reminderChannels"]>("both");
+  const [friendlyReminderDays, setFriendlyReminderDays] = useState("3");
+  const [formalReminderDays, setFormalReminderDays] = useState("7");
+
+  // Notifications
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
+  const [notifyOnPaymentReceived, setNotifyOnPaymentReceived] = useState(true);
+  const [notifyOnInvoiceGenerated, setNotifyOnInvoiceGenerated] = useState(true);
 
   const permissions: string[] = (authData?.user?.permissions as string[] | undefined) ?? [];
   const canManage = permissions.includes("MANAGE_SETTINGS");
@@ -149,6 +202,18 @@ export default function SettingsPage() {
         setDefaultRentDueDay(String(s.defaultRentDueDay));
         setDefaultLateFeeAmount(String(s.defaultLateFeeAmount));
         setDefaultLateFeeAfterDays(String(s.defaultLateFeeAfterDays));
+        if (s.arrears) {
+          setAutoSendReminders(s.arrears.autoSendReminders);
+          setReminderChannels(s.arrears.reminderChannels);
+          setFriendlyReminderDays(String(s.arrears.friendlyReminderDays));
+          setFormalReminderDays(String(s.arrears.formalReminderDays));
+        }
+        if (s.notifications) {
+          setEmailEnabled(s.notifications.emailEnabled);
+          setWhatsappEnabled(s.notifications.whatsappEnabled);
+          setNotifyOnPaymentReceived(s.notifications.notifyOnPaymentReceived);
+          setNotifyOnInvoiceGenerated(s.notifications.notifyOnInvoiceGenerated);
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -166,6 +231,12 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaveError(null);
     setSaved(false);
+    const friendly = parseInt(friendlyReminderDays, 10);
+    const formal = parseInt(formalReminderDays, 10);
+    if (formal <= friendly) {
+      setSaveError("Formal reminder days must be greater than friendly reminder days.");
+      return;
+    }
     setSubmitting(true);
     api.settings
       .update({
@@ -179,6 +250,18 @@ export default function SettingsPage() {
         defaultRentDueDay: parseInt(defaultRentDueDay, 10),
         defaultLateFeeAmount: parseFloat(defaultLateFeeAmount),
         defaultLateFeeAfterDays: parseInt(defaultLateFeeAfterDays, 10),
+        arrears: {
+          autoSendReminders,
+          reminderChannels,
+          friendlyReminderDays: friendly,
+          formalReminderDays: formal,
+        },
+        notifications: {
+          emailEnabled,
+          whatsappEnabled,
+          notifyOnPaymentReceived,
+          notifyOnInvoiceGenerated,
+        },
       })
       .then(() => {
         setSaved(true);
@@ -345,6 +428,96 @@ export default function SettingsPage() {
                 type="number"
                 min={0}
                 placeholder="5"
+                canEdit={canManage}
+              />
+            </div>
+          </section>
+
+          {/* Arrears & Reminders */}
+          <section>
+            <SectionHeader
+              title="Arrears & Reminders"
+              description="Automatic overdue reminders sent to tenants."
+            />
+            <div className="flex flex-col gap-4">
+              <BooleanField
+                label="Auto-send reminders"
+                value={autoSendReminders}
+                onChange={setAutoSendReminders}
+                description="Automatically send overdue reminders to tenants"
+                canEdit={canManage}
+              />
+              <SelectField
+                id="reminderChannels"
+                label="Reminder channels"
+                value={reminderChannels}
+                onChange={setReminderChannels}
+                options={[
+                  { value: "email", label: "Email only" },
+                  { value: "whatsapp", label: "WhatsApp only" },
+                  { value: "both", label: "Both" },
+                ]}
+                canEdit={canManage}
+              />
+              <SettingField
+                id="friendlyReminderDays"
+                label="Friendly reminder (days overdue)"
+                value={friendlyReminderDays}
+                onChange={setFriendlyReminderDays}
+                type="number"
+                min={1}
+                placeholder="3"
+                canEdit={canManage}
+              />
+              <div>
+                <SettingField
+                  id="formalReminderDays"
+                  label="Formal reminder (days overdue)"
+                  value={formalReminderDays}
+                  onChange={setFormalReminderDays}
+                  type="number"
+                  min={1}
+                  placeholder="7"
+                  canEdit={canManage}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Final reminder is sent after formal threshold
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Notifications */}
+          <section>
+            <SectionHeader
+              title="Notifications"
+              description="Global notification channel and event toggles."
+            />
+            <div className="flex flex-col gap-4">
+              <BooleanField
+                label="Email notifications"
+                value={emailEnabled}
+                onChange={setEmailEnabled}
+                description="Enable global email notifications"
+                canEdit={canManage}
+              />
+              <BooleanField
+                label="WhatsApp notifications"
+                value={whatsappEnabled}
+                onChange={setWhatsappEnabled}
+                description="Enable global WhatsApp notifications"
+                canEdit={canManage}
+              />
+              <BooleanField
+                label="Notify on payment received"
+                value={notifyOnPaymentReceived}
+                onChange={setNotifyOnPaymentReceived}
+                canEdit={canManage}
+              />
+              <BooleanField
+                label="Notify on invoice generated"
+                value={notifyOnInvoiceGenerated}
+                onChange={setNotifyOnInvoiceGenerated}
                 canEdit={canManage}
               />
             </div>

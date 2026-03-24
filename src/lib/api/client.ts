@@ -26,6 +26,20 @@ export type SendPortalInviteResponse = {
   alreadyHasAccess?: boolean;
 };
 
+export type ArrearsSettings = {
+  friendlyReminderDays: number;
+  formalReminderDays: number;
+  autoSendReminders: boolean;
+  reminderChannels: "email" | "whatsapp" | "both";
+};
+
+export type NotificationSettings = {
+  emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  notifyOnPaymentReceived: boolean;
+  notifyOnInvoiceGenerated: boolean;
+};
+
 export type OrgSettings = {
   currency: string;
   timezone: string;
@@ -37,6 +51,8 @@ export type OrgSettings = {
   defaultRentDueDay: number;
   defaultLateFeeAmount: number;
   defaultLateFeeAfterDays: number;
+  arrears: ArrearsSettings;
+  notifications: NotificationSettings;
 };
 
 export type SettingsGetResponse = {

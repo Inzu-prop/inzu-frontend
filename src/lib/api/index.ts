@@ -3,6 +3,8 @@ export {
   createInzuApiClient,
   type InzuApiClient,
   type InzuApiDeps,
+  type ArrearsSettings,
+  type NotificationSettings,
   type OrgSettings,
   type SettingsGetResponse,
 } from "./client";
