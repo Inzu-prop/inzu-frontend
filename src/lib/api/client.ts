@@ -10,6 +10,10 @@ import type {
 import type {
   BulkCreateUnitsBody,
   BulkCreateUnitsResponse,
+  BulkDeleteUnitsBody,
+  BulkDeleteUnitsResponse,
+  BulkUpdateUnitsBody,
+  BulkUpdateUnitsResponse,
   CreateUnitBody,
   Unit,
 } from "./units";
@@ -264,6 +268,10 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         request<Unit>("PUT", `organizations/:organizationId/units/${unitId}`, { body }),
       delete: (unitId: string) =>
         request<void>("DELETE", `organizations/:organizationId/units/${unitId}`),
+      bulkDelete: (body: BulkDeleteUnitsBody) =>
+        request<BulkDeleteUnitsResponse>("DELETE", "organizations/:organizationId/units/bulk", { body }),
+      bulkUpdate: (body: BulkUpdateUnitsBody) =>
+        request<BulkUpdateUnitsResponse>("PUT", "organizations/:organizationId/units/bulk", { body }),
     },
     tenants: {
       list: (params?: Record<string, string>) =>

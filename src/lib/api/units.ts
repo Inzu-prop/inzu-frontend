@@ -45,3 +45,26 @@ export interface CreateUnitBody {
   depositAmount?: number;
   [key: string]: unknown;
 }
+
+export interface BulkDeleteUnitsBody {
+  unitIds: string[];
+}
+
+export interface BulkDeleteUnitsResponse {
+  deleted: number;
+  failed: Array<{ unitId: string; reason?: string }>;
+}
+
+export interface BulkUpdateUnitItem {
+  unitId: string;
+  rentAmount?: number;
+}
+
+export interface BulkUpdateUnitsBody {
+  units: BulkUpdateUnitItem[];
+}
+
+export interface BulkUpdateUnitsResponse {
+  updated: Unit[];
+  failed: Array<{ unitId: string; reason?: string }>;
+}
