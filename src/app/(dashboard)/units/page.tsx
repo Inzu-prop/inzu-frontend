@@ -166,8 +166,10 @@ function UnitsPageContent() {
     const rent = parseFloat(bulkRent);
     if (isNaN(rent) || rent < 0) return;
     setBulkUpdating(true);
+    const idsSnapshot = Array.from(selected);
+    console.log("[bulkEditRent] selected.size:", selected.size, "ids:", idsSnapshot);
     try {
-      const units = Array.from(selected).map((unitId) => ({ unitId, rentAmount: rent }));
+      const units = idsSnapshot.map((unitId) => ({ unitId, rentAmount: rent }));
       const res = await api.units.bulkUpdate({ units });
       const failCount = res.failed?.length ?? 0;
       const successCount = res.updated?.length ?? 0;
@@ -198,8 +200,10 @@ function UnitsPageContent() {
 
   const handleBulkDelete = async () => {
     setBulkDeleting(true);
+    const idsSnapshot = Array.from(selected);
+    console.log("[bulkDelete] selected.size:", selected.size, "ids:", idsSnapshot);
     try {
-      const res = await api.units.bulkDelete({ unitIds: Array.from(selected) });
+      const res = await api.units.bulkDelete({ unitIds: idsSnapshot });
       const failCount = res.failed?.length ?? 0;
       if (failCount > 0) {
         const failedLabels = res.failed
