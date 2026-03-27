@@ -167,7 +167,6 @@ function UnitsPageContent() {
     if (isNaN(rent) || rent < 0) return;
     setBulkUpdating(true);
     const idsSnapshot = Array.from(selected);
-    console.log("[bulkEditRent] selected.size:", selected.size, "ids:", idsSnapshot);
     try {
       const units = idsSnapshot.map((unitId) => ({ unitId, rentAmount: rent }));
       const res = await api.units.bulkUpdate({ units });
@@ -201,7 +200,6 @@ function UnitsPageContent() {
   const handleBulkDelete = async () => {
     setBulkDeleting(true);
     const idsSnapshot = Array.from(selected);
-    console.log("[bulkDelete] selected.size:", selected.size, "ids:", idsSnapshot);
     try {
       const res = await api.units.bulkDelete({ unitIds: idsSnapshot });
       const failCount = res.failed?.length ?? 0;

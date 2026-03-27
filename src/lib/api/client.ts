@@ -179,7 +179,6 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     }
     const url = buildUrl(baseUrl, path, organizationId, options?.params);
     if (options?.body !== undefined) {
-      console.log("[api] request body for", method, path, JSON.stringify(options.body));
     }
     const res = await fetch(url, {
       method,
