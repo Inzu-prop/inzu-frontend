@@ -178,8 +178,6 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       throw new ApiError(400, "Organization context required");
     }
     const url = buildUrl(baseUrl, path, organizationId, options?.params);
-    if (options?.body !== undefined) {
-    }
     const res = await fetch(url, {
       method,
       headers: {
