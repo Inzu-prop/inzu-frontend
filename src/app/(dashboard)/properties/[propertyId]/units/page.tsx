@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(n);
 }
 
 function normalizeUnitsResponse(res: unknown): Unit[] {
