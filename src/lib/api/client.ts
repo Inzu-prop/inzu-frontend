@@ -141,7 +141,7 @@ function buildUrl(
   baseUrl: string,
   path: string,
   organizationId: string | null,
-  params?: Record<string, string>,
+  params?: Record<string, string | string[]>,
 ): string {
   const resolvedPath = path.includes(":organizationId")
     ? path.replace(/:organizationId/g, organizationId ?? "")
@@ -149,7 +149,10 @@ function buildUrl(
   const url = new URL(resolvedPath, baseUrl + "/");
   if (params) {
     for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== "") {
+      if (value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const v of value) url.searchParams.append(key, v);
+      } else if (value !== "") {
         url.searchParams.set(key, value);
       }
     }
@@ -165,7 +168,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     path: string,
     options?: {
       body?: unknown;
-      params?: Record<string, string>;
+      params?: Record<string, string | string[]>;
       requiresOrg?: boolean;
     },
   ): Promise<T> {
@@ -269,7 +272,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       delete: (unitId: string) =>
         request<void>("DELETE", `organizations/:organizationId/units/${unitId}`),
       bulkDelete: (body: BulkDeleteUnitsBody) =>
-        request<BulkDeleteUnitsResponse>("DELETE", "organizations/:organizationId/units/bulk", { body }),
+        request<BulkDeleteUnitsResponse>("DELETE", "organizations/:organizationId/units/bulk", { params: { unitIds: body.unitIds } }),
       bulkUpdate: (body: BulkUpdateUnitsBody) =>
         request<BulkUpdateUnitsResponse>("PUT", "organizations/:organizationId/units/bulk", { body }),
     },
