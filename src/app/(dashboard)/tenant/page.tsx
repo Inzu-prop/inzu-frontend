@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Container from "@/components/container";
 import { useTenantMe } from "@/contexts/tenant-me-context";
 import { useInzuApi } from "@/hooks/use-inzu-api";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { ApiError } from "@/lib/api";
 import PaymentStatus from "@/components/payment-status";
 
@@ -33,49 +34,33 @@ export default function TenantPortalPage() {
 
   const latestInvoice = recentInvoices[0] ?? null;
 
-  const [mpesaAmount, setMpesaAmount] = useState(
-    latestInvoice?.amount != null ? String(latestInvoice.amount) : "",
-  );
-  const [mpesaPhone, setMpesaPhone] = useState("");
   const [mpesaStatus, setMpesaStatus] = useState<
     "idle" | "initiating" | "pending" | "success" | "failed" | "error"
   >("idle");
   const [mpesaPaymentId, setMpesaPaymentId] = useState<string | null>(null);
+  const [mpesaCustomerMessage, setMpesaCustomerMessage] = useState<string | null>(null);
   const [mpesaError, setMpesaError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{
     paymentId: string;
     amount: number;
   } | null>(null);
-
-  useEffect(() => {
-    if (latestInvoice?.amount != null && !mpesaAmount) {
-      setMpesaAmount(String(latestInvoice.amount));
-    }
-  }, [latestInvoice?.amount, mpesaAmount]);
+  const { organizationId } = useCurrentOrganizationId();
 
   async function handleInitiateMpesa(event: React.FormEvent) {
     event.preventDefault();
+    if (!latestInvoice?._id) {
+      return;
+    }
     setMpesaError(null);
-
-    const amountNumber = Number(mpesaAmount);
-    if (!amountNumber || amountNumber <= 0) {
-      setMpesaError("Enter a valid amount.");
-      return;
-    }
-    if (!mpesaPhone || !/^2547\d{8}$/.test(mpesaPhone.trim())) {
-      setMpesaError("Enter a valid M-Pesa phone (format 2547XXXXXXXX).");
-      return;
-    }
-
     try {
       setMpesaStatus("initiating");
-      const orderId = latestInvoice?._id ?? "RENT_PAYMENT";
       const res = await api.mpesaPayments.initiate({
-        amount: amountNumber,
-        phoneNumber: mpesaPhone.trim(),
-        orderId,
+        invoiceId: latestInvoice._id,
+        organizationId: organizationId ?? "",
       });
-      setMpesaPaymentId(res.paymentId);
+      const payment = res.requests[0];
+      setMpesaPaymentId(payment.paymentId);
+      setMpesaCustomerMessage(payment.customerMessage ?? null);
       setMpesaStatus("pending");
     } catch (err) {
       const message =
@@ -87,6 +72,9 @@ export default function TenantPortalPage() {
 
   function handleDismissConfirmation() {
     setConfirmation(null);
+    setMpesaStatus("idle");
+    setMpesaPaymentId(null);
+    setMpesaCustomerMessage(null);
   }
 
   return (
@@ -226,52 +214,18 @@ export default function TenantPortalPage() {
           <div className="mt-5 border-t border-border pt-4">
             <h4 className="text-sm font-medium">Pay with M-Pesa</h4>
             <p className="mt-1 text-xs text-muted-foreground">
-              Enter the amount and your M-Pesa phone number to receive an STK
-              push request.
+              {mpesaStatus === "pending" && mpesaCustomerMessage
+                ? mpesaCustomerMessage
+                : "An STK push will be sent to your registered M-Pesa number."}
             </p>
             <form
               onSubmit={handleInitiateMpesa}
               className="mt-3 flex flex-col gap-3 text-sm"
             >
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label
-                    htmlFor="mpesa-amount"
-                    className="mb-1 block text-xs font-medium text-muted-foreground"
-                  >
-                    Amount
-                  </label>
-                  <input
-                    id="mpesa-amount"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={mpesaAmount}
-                    onChange={(e) => setMpesaAmount(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label
-                    htmlFor="mpesa-phone"
-                    className="mb-1 block text-xs font-medium text-muted-foreground"
-                  >
-                    M-Pesa phone (2547…)
-                  </label>
-                  <input
-                    id="mpesa-phone"
-                    type="tel"
-                    value={mpesaPhone}
-                    onChange={(e) => setMpesaPhone(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    placeholder="2547XXXXXXXX"
-                  />
-                </div>
-              </div>
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="submit"
-                  disabled={mpesaStatus === "initiating" || mpesaStatus === "pending"}
+                  disabled={!latestInvoice?._id || mpesaStatus === "initiating" || mpesaStatus === "pending"}
                   className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {mpesaStatus === "initiating"
@@ -305,6 +259,10 @@ export default function TenantPortalPage() {
                   paymentId={mpesaPaymentId}
                   onConfirmed={() => {
                     setMpesaStatus("success");
+                    setConfirmation({
+                      paymentId: mpesaPaymentId!,
+                      amount: latestInvoice?.amount ?? 0,
+                    });
                     void refetch();
                   }}
                   onFailed={() => {

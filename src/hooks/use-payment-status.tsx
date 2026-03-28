@@ -12,7 +12,7 @@ export type PaymentStatusResult = {
 
 export type PaymentApiStatus = {
   paymentId: string;
-  status: "pending" | "success" | "confirmed" | "failed" | "expired";
+  status: "pending" | "success" | "failed";
   [key: string]: unknown;
 };
 
@@ -60,11 +60,11 @@ export function usePaymentStatus({
           ? await pollFnRef.current(paymentId)
           : await apiRef.current.mpesaPayments.getStatus(paymentId);
         onUpdateRef.current?.(res);
-        if (res.status === "success" || res.status === "confirmed") {
+        if (res.status === "success") {
           setStatus("confirmed");
           return true;
         }
-        if (res.status === "failed" || res.status === "expired") {
+        if (res.status === "failed") {
           setStatus("failed");
           return true;
         }
@@ -125,8 +125,8 @@ export function usePaymentStatus({
         ? await pollFnRef.current(paymentId)
         : await apiRef.current.mpesaPayments.getStatus(paymentId);
       onUpdateRef.current?.(res);
-      if (res.status === "success" || res.status === "confirmed") setStatus("confirmed");
-      else if (res.status === "failed" || res.status === "expired") setStatus("failed");
+      if (res.status === "success") setStatus("confirmed");
+      else if (res.status === "failed") setStatus("failed");
       else setStatus("pending");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));

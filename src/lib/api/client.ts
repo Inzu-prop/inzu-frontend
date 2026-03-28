@@ -326,14 +326,14 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         ),
     },
     mpesaPayments: {
-      initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
-        request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
+      initiate: (body: { invoiceId: string; organizationId: string }) =>
+        request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
           "POST",
-          "payments/mpesa/initiate",
-          { body, requiresOrg: false },
+          "organizations/:organizationId/payments/request",
+          { body },
         ),
       getStatus: (paymentId: string) =>
-        request<{ paymentId: string; status: "pending" | "success" | "confirmed" | "failed" | "expired"; orderId: string }>(
+        request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
           "GET",
           `payments/mpesa/status/${paymentId}`,
           { requiresOrg: false },
