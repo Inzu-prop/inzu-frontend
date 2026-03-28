@@ -329,8 +329,8 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       initiate: (body: { invoiceId: string; organizationId: string }) =>
         request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
           "POST",
-          "organizations/:organizationId/payments/request",
-          { body },
+          `organizations/${body.organizationId}/payments/request`,
+          { body, requiresOrg: false },
         ),
       getStatus: (paymentId: string) =>
         request<{ paymentId: string; status: "pending" | "success" | "failed" }>(

@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Container from "@/components/container";
 import { useTenantMe } from "@/contexts/tenant-me-context";
-import { useSetAtom } from "jotai";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
-import { selectedOrganizationIdAtom } from "@/lib/atoms";
 import PaymentStatus from "@/components/payment-status";
 
 function formatDate(value: string | undefined): string {
@@ -27,13 +25,6 @@ function formatCurrency(amount: number | undefined, currency = ""): string {
 export default function TenantPortalPage() {
   const { data, refetch } = useTenantMe();
   const api = useInzuApi();
-  const setOrgId = useSetAtom(selectedOrganizationIdAtom);
-
-  useEffect(() => {
-    const orgId = data?.organization?._id;
-    if (orgId) setOrgId(orgId);
-    return () => setOrgId(null);
-  }, [data?.organization?._id, setOrgId]);
 
   const unit = data?.unit ?? null;
   const recentInvoices = data?.recentInvoices ?? [];
