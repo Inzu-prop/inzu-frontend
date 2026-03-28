@@ -36,6 +36,12 @@ export function usePaymentStatus({
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef(false);
+  const apiRef = useRef(api);
+  apiRef.current = api;
+  const pollFnRef = useRef(pollFn);
+  pollFnRef.current = pollFn;
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
   useEffect(() => {
     abortRef.current = false;
@@ -50,10 +56,10 @@ export function usePaymentStatus({
 
     const fetchStatus = async () => {
       try {
-        const res: PaymentApiStatus = pollFn
-          ? await pollFn(paymentId)
-          : await api.mpesaPayments.getStatus(paymentId);
-        onUpdate?.(res);
+        const res: PaymentApiStatus = pollFnRef.current
+          ? await pollFnRef.current(paymentId)
+          : await apiRef.current.mpesaPayments.getStatus(paymentId);
+        onUpdateRef.current?.(res);
         if (res.status === "success") {
           setStatus("confirmed");
           return true;
@@ -109,16 +115,16 @@ export function usePaymentStatus({
     return () => {
       abortRef.current = true;
     };
-  }, [paymentId, maxDuration, onUpdate, pollFn, api]);
+  }, [paymentId, maxDuration]);
 
   const checkNow = async () => {
     if (!paymentId) return;
     setError(null);
     try {
-      const res: PaymentApiStatus = pollFn
-        ? await pollFn(paymentId)
-        : await api.mpesaPayments.getStatus(paymentId);
-      onUpdate?.(res);
+      const res: PaymentApiStatus = pollFnRef.current
+        ? await pollFnRef.current(paymentId)
+        : await apiRef.current.mpesaPayments.getStatus(paymentId);
+      onUpdateRef.current?.(res);
       if (res.status === "success") setStatus("confirmed");
       else if (res.status === "failed") setStatus("failed");
       else setStatus("pending");
