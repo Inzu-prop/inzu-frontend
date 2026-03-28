@@ -10,7 +10,8 @@
       "Bash(ls -la '/c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app/\\(dashboard\\)/properties/[propertyId]/units/')",
       "Bash(pnpm build:*)",
       "Bash(pnpm dlx:*)",
-      "Bash(pnpm exec:*)"
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm lint:*)"
     ]
   }
 }

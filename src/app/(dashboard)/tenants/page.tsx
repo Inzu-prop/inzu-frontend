@@ -85,18 +85,10 @@ export default function TenantsPage() {
   const [data, setData] = useState<TenantItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [invitingTenantId, setInvitingTenantId] = useState<string | null>(null);
-  const [tenantIdsWithAccess, setTenantIdsWithAccess] = useState<Set<string>>(
-    () => new Set(),
-  );
   const [inviteMessage, setInviteMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
-  const [invitePopoverOpen, setInvitePopoverOpen] = useState<string | null>(
-    null,
-  );
-  const [redirectUrl, setRedirectUrl] = useState("");
   const [addTenantOpen, setAddTenantOpen] = useState(false);
   const [addTenantFirstName, setAddTenantFirstName] = useState("");
   const [addTenantLastName, setAddTenantLastName] = useState("");
@@ -111,7 +103,6 @@ export default function TenantsPage() {
   const [statusTenantId, setStatusTenantId] = useState<string | null>(null);
   const [statusSelectedValue, setStatusSelectedValue] = useState<string>("");
   const [statusSubmitting, setStatusSubmitting] = useState(false);
-  const [whatsappInvitingTenantId, setWhatsappInvitingTenantId] = useState<string | null>(null);
 
   const fetchTenants = useCallback(() => {
     if (!organizationId) {
@@ -206,63 +197,6 @@ export default function TenantsPage() {
         );
       })
       .finally(() => setAddTenantSubmitting(false));
-  };
-
-  const sendPortalInvite = (tenant: TenantItem, customRedirectUrl?: string) => {
-    const tenantId = tenant.id;
-    if (!tenantId) return;
-    setInvitingTenantId(tenantId);
-    setInviteMessage(null);
-    const url = customRedirectUrl?.trim();
-    const body = url ? { redirectUrl: url } : undefined;
-    api.tenants
-      .sendPortalInvite(tenantId, body)
-      .then((res) => {
-        if (res.alreadyHasAccess) {
-          setTenantIdsWithAccess((prev) => new Set(prev).add(tenantId));
-          setInviteMessage({
-            type: "success",
-            text: "Tenant already has portal access",
-          });
-        } else {
-          const email = tenant.email ?? "the tenant";
-          setInviteMessage({
-            type: "success",
-            text: `Invitation sent to ${email}. They will receive an email to set their password.`,
-          });
-        }
-        setInvitePopoverOpen(null);
-        setRedirectUrl("");
-      })
-      .catch((err) => {
-        setInviteMessage({
-          type: "error",
-          text: err instanceof ApiError ? err.message : String(err),
-        });
-      })
-      .finally(() => setInvitingTenantId(null));
-  };
-
-  const sendWhatsappInvite = (tenant: TenantItem) => {
-    const tenantId = tenant.id;
-    if (!tenantId) return;
-    setWhatsappInvitingTenantId(tenantId);
-    setInviteMessage(null);
-    api.tenants
-      .sendWhatsappInvite(tenantId)
-      .then(() => {
-        setInviteMessage({
-          type: "success",
-          text: "WhatsApp invitation sent.",
-        });
-      })
-      .catch((err) => {
-        setInviteMessage({
-          type: "error",
-          text: err instanceof ApiError ? err.message : String(err),
-        });
-      })
-      .finally(() => setWhatsappInvitingTenantId(null));
   };
 
   const handleOpenAssignUnit = (tenant: TenantItem) => {
@@ -428,9 +362,6 @@ export default function TenantsPage() {
           <ul className="divide-y divide-border rounded-md border border-border">
             {data.map((item) => {
               const tenantId = item.id ?? String(item);
-              const hasAccess = tenantIdsWithAccess.has(tenantId);
-              const isInviting = invitingTenantId === tenantId;
-              const isWhatsappInviting = whatsappInvitingTenantId === tenantId;
               const tenantUnitId = item.unitId;
               const assignedUnit = tenantUnitId ? unitsById[tenantUnitId] : undefined;
               return (
@@ -552,65 +483,6 @@ export default function TenantsPage() {
                         </Button>
                       </PopoverContent>
                     </Popover>
-                    {hasAccess ? (
-                      <span className="text-sm text-muted-foreground">
-                        Already has portal access
-                      </span>
-                    ) : (
-                      <Popover
-                        open={invitePopoverOpen === tenantId}
-                        onOpenChange={(open) => {
-                          setInvitePopoverOpen(open ? tenantId : null);
-                          if (!open) setRedirectUrl("");
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isInviting}
-                          >
-                            {isInviting ? "Sending…" : "Invite to portal"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-80">
-                          <p className="mb-2 text-sm text-muted-foreground">
-                            Send an invitation email so the tenant can set their
-                            password and access the portal.
-                          </p>
-                          <label className="mb-1 block text-sm font-medium">
-                            Redirect URL (optional)
-                          </label>
-                          <input
-                            type="url"
-                            placeholder="https://..."
-                            value={redirectUrl}
-                            onChange={(e) => setRedirectUrl(e.target.value)}
-                            className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          />
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            disabled={isInviting}
-                            onClick={() =>
-                              sendPortalInvite(item, redirectUrl || undefined)
-                            }
-                          >
-                            {isInviting ? "Sending…" : "Send invite"}
-                          </Button>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                    {item.phoneNumber && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isWhatsappInviting}
-                        onClick={() => sendWhatsappInvite(item)}
-                      >
-                        {isWhatsappInviting ? "Sending…" : "Send WhatsApp invite"}
-                      </Button>
-                    )}
                   </div>
                 </li>
               );
