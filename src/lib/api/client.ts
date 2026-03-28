@@ -99,7 +99,7 @@ export type TenantMeResponse = {
     name?: string;
     [key: string]: unknown;
   };
-  organization: { name: string; [key: string]: unknown };
+  organization: { _id: string; name: string; [key: string]: unknown };
   unit: {
     _id?: string;
     unitNumber?: string;
