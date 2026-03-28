@@ -8,7 +8,9 @@
       "Bash(find /c/Users/Admin/Desktop/Projects/INZU/inzu-frontend -type f -name *unit*)",
       "Bash(ls -la '/c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app/\\(dashboard\\)/units/')",
       "Bash(ls -la '/c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app/\\(dashboard\\)/properties/[propertyId]/units/')",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm exec:*)"
     ]
   }
 }

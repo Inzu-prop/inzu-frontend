@@ -30,6 +30,19 @@ export type SendPortalInviteResponse = {
   alreadyHasAccess?: boolean;
 };
 
+export type CreateTenantResponse = {
+  id?: string;
+  _id?: string;
+  inviteSent?: boolean;
+  whatsappSent?: boolean;
+  [key: string]: unknown;
+};
+
+export type SendWhatsappInviteResponse = {
+  success: true;
+  message: string;
+};
+
 export type ArrearsSettings = {
   friendlyReminderDays: number;
   formalReminderDays: number;
@@ -282,7 +295,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       get: (tenantId: string) =>
         request<unknown>("GET", `organizations/:organizationId/tenants/${tenantId}`),
       create: (body: unknown) =>
-        request<unknown>("POST", "organizations/:organizationId/tenants", { body }),
+        request<CreateTenantResponse>("POST", "organizations/:organizationId/tenants", { body }),
       update: (tenantId: string, body: unknown) =>
         request<unknown>("PUT", `organizations/:organizationId/tenants/${tenantId}`, { body }),
       delete: (tenantId: string) =>
@@ -292,6 +305,12 @@ export function createInzuApiClient(deps: InzuApiDeps) {
           "POST",
           `organizations/:organizationId/tenants/${tenantId}/send-portal-invite`,
           { body: body ?? {} },
+        ),
+      sendWhatsappInvite: (tenantId: string) =>
+        request<SendWhatsappInviteResponse>(
+          "POST",
+          `organizations/:organizationId/tenants/${tenantId}/send-whatsapp-invite`,
+          { body: {} },
         ),
     },
     invoices: {

@@ -10,6 +10,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { Unit } from "@/lib/api";
@@ -22,6 +28,7 @@ type TenantItem = {
   firstName?: string;
   lastName?: string;
   email?: string;
+  phoneNumber?: string;
   unitId?: string;
   propertyId?: string;
   monthlyRent?: number;
@@ -104,6 +111,7 @@ export default function TenantsPage() {
   const [statusTenantId, setStatusTenantId] = useState<string | null>(null);
   const [statusSelectedValue, setStatusSelectedValue] = useState<string>("");
   const [statusSubmitting, setStatusSubmitting] = useState(false);
+  const [whatsappInvitingTenantId, setWhatsappInvitingTenantId] = useState<string | null>(null);
 
   const fetchTenants = useCallback(() => {
     if (!organizationId) {
@@ -174,13 +182,23 @@ export default function TenantsPage() {
         email: addTenantEmail.trim() || undefined,
         phoneNumber,
       })
-      .then(() => {
+      .then((res) => {
         setAddTenantOpen(false);
         setAddTenantFirstName("");
         setAddTenantLastName("");
         setAddTenantEmail("");
         setAddTenantPhone("");
         fetchTenants();
+        const { inviteSent, whatsappSent } = res ?? {};
+        let confirmText = "Tenant added.";
+        if (inviteSent && whatsappSent) {
+          confirmText = "Tenant added. Invitation sent via email and WhatsApp.";
+        } else if (inviteSent) {
+          confirmText = "Tenant added. Email invite sent.";
+        } else if (whatsappSent) {
+          confirmText = "Tenant added. WhatsApp invite sent.";
+        }
+        setInviteMessage({ type: "success", text: confirmText });
       })
       .catch((err) => {
         setAddTenantError(
@@ -223,6 +241,28 @@ export default function TenantsPage() {
         });
       })
       .finally(() => setInvitingTenantId(null));
+  };
+
+  const sendWhatsappInvite = (tenant: TenantItem) => {
+    const tenantId = tenant.id;
+    if (!tenantId) return;
+    setWhatsappInvitingTenantId(tenantId);
+    setInviteMessage(null);
+    api.tenants
+      .sendWhatsappInvite(tenantId)
+      .then(() => {
+        setInviteMessage({
+          type: "success",
+          text: "WhatsApp invitation sent.",
+        });
+      })
+      .catch((err) => {
+        setInviteMessage({
+          type: "error",
+          text: err instanceof ApiError ? err.message : String(err),
+        });
+      })
+      .finally(() => setWhatsappInvitingTenantId(null));
   };
 
   const handleOpenAssignUnit = (tenant: TenantItem) => {
@@ -289,19 +329,21 @@ export default function TenantsPage() {
       <Container className="py-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Tenants</h2>
-          <Popover
+          <Button size="sm" onClick={() => setAddTenantOpen(true)}>
+            Add tenant
+          </Button>
+          <Dialog
             open={addTenantOpen}
             onOpenChange={(open) => {
               setAddTenantOpen(open);
               if (!open) setAddTenantError(null);
             }}
           >
-            <PopoverTrigger asChild>
-              <Button size="sm">Add tenant</Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-80">
-              <h3 className="mb-3 font-medium">Add tenant</h3>
-              <form onSubmit={handleAddTenant}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add tenant</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddTenant} className="mt-2">
                 <label className="mb-1 block text-sm font-medium">
                   First name <span className="text-destructive">*</span>
                 </label>
@@ -358,8 +400,8 @@ export default function TenantsPage() {
                   {addTenantSubmitting ? "Adding…" : "Add tenant"}
                 </Button>
               </form>
-            </PopoverContent>
-          </Popover>
+            </DialogContent>
+          </Dialog>
         </div>
         {inviteMessage && (
           <p
@@ -388,6 +430,7 @@ export default function TenantsPage() {
               const tenantId = item.id ?? String(item);
               const hasAccess = tenantIdsWithAccess.has(tenantId);
               const isInviting = invitingTenantId === tenantId;
+              const isWhatsappInviting = whatsappInvitingTenantId === tenantId;
               const tenantUnitId = item.unitId;
               const assignedUnit = tenantUnitId ? unitsById[tenantUnitId] : undefined;
               return (
@@ -557,6 +600,16 @@ export default function TenantsPage() {
                           </Button>
                         </PopoverContent>
                       </Popover>
+                    )}
+                    {item.phoneNumber && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isWhatsappInviting}
+                        onClick={() => sendWhatsappInvite(item)}
+                      >
+                        {isWhatsappInviting ? "Sending…" : "Send WhatsApp invite"}
+                      </Button>
                     )}
                   </div>
                 </li>
