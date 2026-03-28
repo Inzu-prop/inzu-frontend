@@ -76,48 +76,13 @@ export default function TenantPortalPage() {
         orderId,
       });
       setMpesaPaymentId(res.paymentId);
-      setMpesaStatus(res.status === "pending" ? "pending" : res.status);
-
-      if (res.status === "pending") {
-        void pollMpesaStatus(res.paymentId);
-      }
+      setMpesaStatus("pending");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Could not initiate payment.";
       setMpesaError(message);
       setMpesaStatus("error");
     }
-  }
-
-  async function pollMpesaStatus(paymentId: string) {
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    while (attempts < maxAttempts) {
-      attempts += 1;
-      try {
-        const res = await api.mpesaPayments.getStatus(paymentId);
-        if (res.status === "success" || res.status === "failed") {
-          setMpesaStatus(res.status);
-          if (res.status === "success") {
-            void refetch();
-          }
-          return;
-        }
-      } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : "Could not check payment status.";
-        setMpesaError(message);
-        setMpesaStatus("error");
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
-
-    setMpesaStatus("error");
-    setMpesaError("Payment is still pending. Please check again later.");
   }
 
   function handleDismissConfirmation() {
@@ -335,7 +300,7 @@ export default function TenantPortalPage() {
               {mpesaError && (
                 <p className="text-xs font-medium text-destructive">{mpesaError}</p>
               )}
-              {mpesaPaymentId && (
+              {mpesaPaymentId && mpesaStatus === "pending" && (
                 <PaymentStatus
                   paymentId={mpesaPaymentId}
                   onConfirmed={() => {
