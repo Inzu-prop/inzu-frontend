@@ -333,7 +333,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
           { body, requiresOrg: false },
         ),
       getStatus: (paymentId: string) =>
-        request<{ paymentId: string; status: "pending" | "success" | "failed"; orderId: string }>(
+        request<{ paymentId: string; status: "pending" | "success" | "confirmed" | "failed" | "expired"; orderId: string }>(
           "GET",
           `payments/mpesa/status/${paymentId}`,
           { requiresOrg: false },
