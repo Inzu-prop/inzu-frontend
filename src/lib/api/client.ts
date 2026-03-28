@@ -228,6 +228,12 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     tenant: {
       me: () =>
         request<TenantMeResponse>("GET", "tenant/me", { requiresOrg: false }),
+      initiatePayment: (body: { invoiceId: string }) =>
+        request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
+          "POST",
+          "tenant/payments/mpesa/initiate",
+          { body, requiresOrg: false },
+        ),
     },
     dashboard: {
       getSummary: () =>
@@ -329,8 +335,8 @@ export function createInzuApiClient(deps: InzuApiDeps) {
       initiate: (body: { invoiceId: string; organizationId: string }) =>
         request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
           "POST",
-          `organizations/${body.organizationId}/payments/request`,
-          { body, requiresOrg: false },
+          "organizations/:organizationId/payments/request",
+          { body },
         ),
       getStatus: (paymentId: string) =>
         request<{ paymentId: string; status: "pending" | "success" | "failed" }>(

@@ -51,9 +51,8 @@ export default function TenantPortalPage() {
     setMpesaError(null);
     try {
       setMpesaStatus("initiating");
-      const res = await api.mpesaPayments.initiate({
+      const res = await api.tenant.initiatePayment({
         invoiceId: latestInvoice._id,
-        organizationId: data?.organization?._id ?? "",
       });
       const payment = res.requests[0];
       setMpesaPaymentId(payment.paymentId);
