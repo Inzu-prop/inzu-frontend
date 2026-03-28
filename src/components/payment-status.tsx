@@ -6,16 +6,19 @@ import { usePaymentStatus } from "@/hooks/use-payment-status";
 type Props = {
   paymentId: string | null;
   onConfirmed?: () => void;
+  onFailed?: () => void;
 };
 
-export default function PaymentStatus({ paymentId, onConfirmed }: Props) {
+export default function PaymentStatus({ paymentId, onConfirmed, onFailed }: Props) {
   const { status, error, checkNow } = usePaymentStatus({ paymentId });
 
   React.useEffect(() => {
     if (status === "confirmed") {
       onConfirmed?.();
+    } else if (status === "failed" || status === "error") {
+      onFailed?.();
     }
-  }, [status, onConfirmed]);
+  }, [status, onConfirmed, onFailed]);
 
   if (!paymentId) return null;
 

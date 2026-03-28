@@ -106,7 +106,7 @@ export function usePaymentStatus({
 
       if (!abortRef.current && Date.now() - start >= maxDuration) {
         setError("Timed out waiting for payment confirmation");
-        setStatus("pending");
+        setStatus("error");
       }
     };
 

@@ -307,6 +307,9 @@ export default function TenantPortalPage() {
                     setMpesaStatus("success");
                     void refetch();
                   }}
+                  onFailed={() => {
+                    setMpesaStatus("failed");
+                  }}
                 />
               )}
             </form>
