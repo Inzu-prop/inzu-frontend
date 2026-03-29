@@ -33,9 +33,7 @@ export default function TenantPortalPage() {
 
   const latestInvoice = recentInvoices[0] ?? null;
 
-  const [mpesaAmount, setMpesaAmount] = useState(
-    latestInvoice?.amount != null ? String(latestInvoice.amount) : "",
-  );
+  const tenantPhone = (data?.tenant?.phoneNumber as string | undefined) ?? "";
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [mpesaStatus, setMpesaStatus] = useState<
     "idle" | "initiating" | "pending" | "success" | "failed" | "error"
@@ -48,20 +46,15 @@ export default function TenantPortalPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (latestInvoice?.amount != null && !mpesaAmount) {
-      setMpesaAmount(String(latestInvoice.amount));
+    if (tenantPhone && !mpesaPhone) {
+      setMpesaPhone(tenantPhone);
     }
-  }, [latestInvoice?.amount, mpesaAmount]);
+  }, [tenantPhone, mpesaPhone]);
 
   async function handleInitiateMpesa(event: React.FormEvent) {
     event.preventDefault();
     setMpesaError(null);
 
-    const amountNumber = Number(mpesaAmount);
-    if (!amountNumber || amountNumber <= 0) {
-      setMpesaError("Enter a valid amount.");
-      return;
-    }
     if (!mpesaPhone || !/^2547\d{8}$/.test(mpesaPhone.trim())) {
       setMpesaError("Enter a valid M-Pesa phone (format 2547XXXXXXXX).");
       return;
@@ -69,11 +62,9 @@ export default function TenantPortalPage() {
 
     try {
       setMpesaStatus("initiating");
-      const orderId = latestInvoice?._id ?? "RENT_PAYMENT";
       const res = await api.mpesaPayments.initiate({
-        amount: amountNumber,
+        invoiceId: latestInvoice?._id,
         phoneNumber: mpesaPhone.trim(),
-        orderId,
       });
       setMpesaPaymentId(res.paymentId);
       setMpesaStatus("pending");
@@ -233,40 +224,21 @@ export default function TenantPortalPage() {
               onSubmit={handleInitiateMpesa}
               className="mt-3 flex flex-col gap-3 text-sm"
             >
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label
-                    htmlFor="mpesa-amount"
-                    className="mb-1 block text-xs font-medium text-muted-foreground"
-                  >
-                    Amount
-                  </label>
-                  <input
-                    id="mpesa-amount"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={mpesaAmount}
-                    onChange={(e) => setMpesaAmount(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label
-                    htmlFor="mpesa-phone"
-                    className="mb-1 block text-xs font-medium text-muted-foreground"
-                  >
-                    M-Pesa phone (2547…)
-                  </label>
-                  <input
-                    id="mpesa-phone"
-                    type="tel"
-                    value={mpesaPhone}
-                    onChange={(e) => setMpesaPhone(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    placeholder="2547XXXXXXXX"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="mpesa-phone"
+                  className="mb-1 block text-xs font-medium text-muted-foreground"
+                >
+                  M-Pesa phone (2547…)
+                </label>
+                <input
+                  id="mpesa-phone"
+                  type="tel"
+                  value={mpesaPhone}
+                  onChange={(e) => setMpesaPhone(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  placeholder="2547XXXXXXXX"
+                />
               </div>
               <div className="flex items-center justify-between gap-3">
                 <button
@@ -305,6 +277,7 @@ export default function TenantPortalPage() {
                   paymentId={mpesaPaymentId}
                   onConfirmed={() => {
                     setMpesaStatus("success");
+                    setConfirmation({ paymentId: mpesaPaymentId!, amount: latestInvoice?.amount ?? 0 });
                     void refetch();
                   }}
                   onFailed={() => {

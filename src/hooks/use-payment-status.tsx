@@ -51,7 +51,7 @@ export function usePaymentStatus({
       return;
     }
 
-    let interval = 2000;
+    const interval = 4000;
     const start = Date.now();
 
     const fetchStatus = async () => {
@@ -101,7 +101,6 @@ export function usePaymentStatus({
         if (abortRef.current) return;
         const done = await fetchStatus();
         if (done) return;
-        interval = Math.min(15_000, Math.round(interval * 1.5));
       }
 
       if (!abortRef.current && Date.now() - start >= maxDuration) {

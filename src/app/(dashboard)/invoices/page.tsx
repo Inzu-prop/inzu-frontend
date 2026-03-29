@@ -8,6 +8,7 @@ import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 import type { GeneratedInvoice, GenerateInvoicesResponse, InvoiceListItem } from "@/lib/api";
+import PaymentStatus from "@/components/payment-status";
 
 function currentYearMonth(): string {
   const now = new Date();
@@ -177,6 +178,14 @@ function GeneratePanel({
   );
 }
 
+type PaymentRequest = {
+  invoiceId: string;
+  phone: string;
+  status: "idle" | "requesting" | "pending" | "success" | "failed";
+  paymentId: string | null;
+  error: string | null;
+};
+
 export default function InvoicesPage() {
   const api = useInzuApi();
   const { organizationId, isLoaded } = useCurrentOrganizationId();
@@ -184,6 +193,37 @@ export default function InvoicesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [paymentRequests, setPaymentRequests] = useState<Record<string, PaymentRequest>>({});
+
+  function getPayReq(invoiceId: string): PaymentRequest {
+    return paymentRequests[invoiceId] ?? { invoiceId, phone: "", status: "idle", paymentId: null, error: null };
+  }
+
+  function updatePayReq(invoiceId: string, patch: Partial<PaymentRequest>) {
+    setPaymentRequests((prev) => ({
+      ...prev,
+      [invoiceId]: { ...getPayReq(invoiceId), ...patch },
+    }));
+  }
+
+  async function handleRequestPayment(invoiceId: string) {
+    const req = getPayReq(invoiceId);
+    if (!req.phone || !/^2547\d{8}$/.test(req.phone.trim())) {
+      updatePayReq(invoiceId, { error: "Enter a valid M-Pesa phone (format 2547XXXXXXXX)." });
+      return;
+    }
+    updatePayReq(invoiceId, { status: "requesting", error: null });
+    try {
+      const res = await api.payments.request({ invoiceId, phoneNumber: req.phone.trim() });
+      const paymentId = res.requests[0]?.paymentId ?? null;
+      updatePayReq(invoiceId, { status: "pending", paymentId });
+    } catch (err) {
+      updatePayReq(invoiceId, {
+        status: "idle",
+        error: err instanceof ApiError ? err.message : "Could not send payment request.",
+      });
+    }
+  }
 
   function fetchInvoices() {
     if (!organizationId) return;
@@ -241,31 +281,82 @@ export default function InvoicesPage() {
 
         {!loading && !loadError && data && data.length > 0 && (
           <ul className="divide-y divide-border rounded-md border border-border">
-            {data.map((item) => (
-              <li
-                key={item._id}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
-              >
-                <div>
-                  <span className="font-medium text-sm">
-                    {item.invoiceNumber ?? item._id}
-                  </span>
-                  {item.period && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {item.period}
-                    </span>
+            {data.map((item) => {
+              const isPaid = item.status?.toLowerCase() === "paid";
+              const req = getPayReq(item._id);
+              return (
+                <li key={item._id} className="px-4 py-3 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="font-medium text-sm">
+                        {item.invoiceNumber ?? item._id}
+                      </span>
+                      {item.period && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {item.period}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>{formatAmount(item.totalAmount ?? item.amount)}</span>
+                      {item.status && (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass(item.status)}`}>
+                          {item.status}
+                        </span>
+                      )}
+                      {!isPaid && req.status === "idle" && (
+                        <Button size="sm" variant="outline" onClick={() => updatePayReq(item._id, { status: "idle", phone: "" })}>
+                          Request payment
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isPaid && req.status !== "success" && (
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                          M-Pesa phone (2547…)
+                        </label>
+                        <input
+                          type="tel"
+                          value={req.phone}
+                          onChange={(e) => updatePayReq(item._id, { phone: e.target.value })}
+                          placeholder="2547XXXXXXXX"
+                          className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={req.status === "requesting" || req.status === "pending"}
+                        onClick={() => void handleRequestPayment(item._id)}
+                      >
+                        {req.status === "requesting" ? "Sending…" : req.status === "pending" ? "Waiting…" : "Send STK push"}
+                      </Button>
+                    </div>
                   )}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{formatAmount(item.totalAmount ?? item.amount)}</span>
-                  {item.status && (
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass(item.status)}`}>
-                      {item.status}
-                    </span>
+
+                  {req.error && (
+                    <p className="text-xs text-destructive">{req.error}</p>
                   )}
-                </div>
-              </li>
-            ))}
+
+                  {req.paymentId && req.status === "pending" && (
+                    <PaymentStatus
+                      paymentId={req.paymentId}
+                      onConfirmed={() => {
+                        updatePayReq(item._id, { status: "success" });
+                        fetchInvoices();
+                      }}
+                      onFailed={() => updatePayReq(item._id, { status: "failed", error: "Payment failed. You can try again." })}
+                    />
+                  )}
+
+                  {req.status === "success" && (
+                    <p className="text-xs font-medium text-emerald-700">Payment confirmed.</p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </Container>

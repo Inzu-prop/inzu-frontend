@@ -97,6 +97,7 @@ export type TenantMeResponse = {
     firstName?: string;
     lastName?: string;
     name?: string;
+    phoneNumber?: string;
     [key: string]: unknown;
   };
   organization: { name: string; [key: string]: unknown };
@@ -326,7 +327,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         ),
     },
     mpesaPayments: {
-      initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
+      initiate: (body: { invoiceId?: string; phoneNumber: string }) =>
         request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
           "POST",
           "payments/mpesa/initiate",
@@ -342,8 +343,12 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     payments: {
       list: (params?: Record<string, string>) =>
         request<unknown>("GET", "organizations/:organizationId/payments", { params }),
-      request: (body: unknown) =>
-        request<unknown>("POST", "organizations/:organizationId/payments/request", { body }),
+      request: (body: { invoiceId: string; phoneNumber?: string }) =>
+        request<{ requests: { paymentId: string; customerMessage: string; amount: number }[] }>(
+          "POST",
+          "organizations/:organizationId/payments/request",
+          { body },
+        ),
       reconcile: (body: unknown) =>
         request<unknown>("POST", "organizations/:organizationId/payments/reconcile", { body }),
     },
