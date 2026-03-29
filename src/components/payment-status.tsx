@@ -21,7 +21,7 @@ export default function PaymentStatus({ paymentId, onConfirmed, onFailed }: Prop
   }, [status, onConfirmed, onFailed]);
 
   if (!paymentId) return null;
-//
+
   return (
     <div className="mt-3 space-y-2 text-sm">
       <div className="flex items-center justify-between">

@@ -99,7 +99,7 @@ export type TenantMeResponse = {
     name?: string;
     [key: string]: unknown;
   };
-  organization: { _id: string; name: string; [key: string]: unknown };
+  organization: { name: string; [key: string]: unknown };
   unit: {
     _id?: string;
     unitNumber?: string;
@@ -228,12 +228,6 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     tenant: {
       me: () =>
         request<TenantMeResponse>("GET", "tenant/me", { requiresOrg: false }),
-      initiatePayment: (body: { invoiceId: string }) =>
-        request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
-          "POST",
-          "tenant/payments/mpesa/initiate",
-          { body, requiresOrg: false },
-        ),
     },
     dashboard: {
       getSummary: () =>
@@ -332,14 +326,14 @@ export function createInzuApiClient(deps: InzuApiDeps) {
         ),
     },
     mpesaPayments: {
-      initiate: (body: { invoiceId: string; organizationId: string }) =>
-        request<{ requests: Array<{ paymentId: string; checkoutRequestId: string; customerMessage: string; amount: number }> }>(
+      initiate: (body: { amount: number; phoneNumber: string; orderId: string }) =>
+        request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
           "POST",
-          "organizations/:organizationId/payments/request",
-          { body },
+          "payments/mpesa/initiate",
+          { body, requiresOrg: false },
         ),
       getStatus: (paymentId: string) =>
-        request<{ paymentId: string; status: "pending" | "success" | "failed" }>(
+        request<{ paymentId: string; status: "pending" | "success" | "confirmed" | "failed" | "expired"; orderId: string }>(
           "GET",
           `payments/mpesa/status/${paymentId}`,
           { requiresOrg: false },
