@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOrganization } from "@clerk/nextjs";
 
 // ─── Icons (inline SVG — no icon lib dependency) ────────────────────────────
 const icons: Record<string, React.ReactNode> = {
@@ -94,6 +95,7 @@ interface NavItemProps {
 export default function InzuSidebar() {
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
+  const { organization } = useOrganization();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
@@ -195,6 +197,84 @@ export default function InzuSidebar() {
 
         {/* Settings pinned to bottom */}
         <div className="mt-auto">
+          {/* Organization display */}
+          {organization && (
+            <>
+              <div
+                style={{
+                  height: 1,
+                  background: "rgba(144,180,148,0.1)",
+                  margin: "10px 4px 8px",
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px",
+                  borderRadius: 10,
+                  background: "rgba(144,180,148,0.07)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Org initials avatar */}
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: "rgba(144,180,148,0.22)",
+                    border: "1px solid rgba(144,180,148,0.3)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    color: "#90B494",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {(organization.name ?? "O").slice(0, 2).toUpperCase()}
+                </div>
+                {/* Org name */}
+                <div
+                  style={{
+                    opacity: expanded ? 1 : 0,
+                    transition: "opacity 0.18s ease 0.12s",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "rgba(245,247,246,0.9)",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      letterSpacing: "0.01em",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: 120,
+                    }}
+                  >
+                    {organization.name}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(144,180,148,0.65)",
+                      fontSize: 9,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      marginTop: 1,
+                    }}
+                  >
+                    Organization
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
           <div
             style={{
               height: 1,
