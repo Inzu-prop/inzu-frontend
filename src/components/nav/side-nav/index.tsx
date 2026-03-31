@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useAtom } from "jotai";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useOrganization } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { mobileNavOpenAtom, desktopSidebarExpandedAtom } from "@/lib/atoms";
+import { mobileNavOpenAtom } from "@/lib/atoms";
 import Navigation from "./components/navigation";
 import User from "./components/user";
 
 export default function SideNav() {
   const [mobileOpen, setMobileOpen] = useAtom(mobileNavOpenAtom);
-  const [desktopExpanded, setDesktopExpanded] = useAtom(desktopSidebarExpandedAtom);
+  const [hovered, setHovered] = useState(false);
+  const { organization } = useOrganization();
+
+  const desktopExpanded = hovered;
 
   return (
     <>
@@ -21,6 +25,8 @@ export default function SideNav() {
         />
       )}
       <aside
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
           background: "rgba(19, 39, 13, 0.85)",
           backdropFilter: "blur(20px)",
@@ -29,13 +35,13 @@ export default function SideNav() {
           borderRadius: "0 16px 16px 0",
         }}
         className={cn(
-          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] w-[200px] shrink-0 flex-col overflow-x-hidden",
+          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] shrink-0 flex-col overflow-x-hidden",
           "laptop:sticky",
           "transition-[width,transform] duration-[400ms] ease-luxury",
-          // Mobile: slide in/out
-          mobileOpen ? "translate-x-0" : "-translate-x-full laptop:translate-x-0",
-          // Desktop: collapsed (w-16) or expanded (w-[200px])
-          !desktopExpanded && "laptop:w-16",
+          // Mobile: slide in/out at full width
+          mobileOpen ? "translate-x-0 w-[200px]" : "-translate-x-full laptop:translate-x-0",
+          // Desktop: collapsed (w-16) or expanded on hover (w-[200px])
+          !mobileOpen && (desktopExpanded ? "laptop:w-[200px]" : "laptop:w-16"),
         )}
       >
         <User expanded={desktopExpanded} mobileOpen={mobileOpen} />
@@ -44,14 +50,80 @@ export default function SideNav() {
           expanded={desktopExpanded || mobileOpen}
         />
 
-        {/* Desktop-only toggle button */}
-        <button
-          className="hidden laptop:flex items-center justify-center h-10 w-full shrink-0 border-t border-[rgba(144,180,148,0.1)] text-[rgba(144,180,148,0.5)] hover:text-[#90B494] transition-colors duration-200"
-          onClick={() => setDesktopExpanded(!desktopExpanded)}
-          aria-label={desktopExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {desktopExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-        </button>
+        {/* Organization display pinned to bottom */}
+        <div className="mt-auto px-3 pb-4">
+          {organization && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: "rgba(144,180,148,0.07)",
+                overflow: "hidden",
+                borderTop: "1px solid rgba(144,180,148,0.1)",
+                paddingTop: 10,
+                marginBottom: 0,
+              }}
+            >
+              {/* Org initials avatar */}
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "rgba(144,180,148,0.22)",
+                  border: "1px solid rgba(144,180,148,0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  color: "#90B494",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {(organization.name ?? "O").slice(0, 2).toUpperCase()}
+              </div>
+              {/* Org name — fades in on expand */}
+              <div
+                style={{
+                  opacity: desktopExpanded || mobileOpen ? 1 : 0,
+                  transition: "opacity 0.18s ease 0.12s",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  style={{
+                    color: "rgba(245,247,246,0.9)",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: "0.01em",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {organization.name}
+                </div>
+                <div
+                  style={{
+                    color: "rgba(144,180,148,0.65)",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    marginTop: 1,
+                  }}
+                >
+                  Organization
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </aside>
     </>
   );
