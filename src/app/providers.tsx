@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Provider as JotaiProvider } from "jotai";
 import { ChartThemeProvider } from "@/components/providers/chart-theme-provider";
 import { ModeThemeProvider } from "@/components/providers/mode-theme-provider";
-import { clerkLayout } from "@/config/clerk-theme";
+import { clerkLayout, getClerkAppearanceVariables } from "@/config/clerk-theme";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const publishableKey =
@@ -14,7 +14,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider
       publishableKey={publishableKey}
-      appearance={{ layout: clerkLayout }}
+      appearance={{
+        layout: clerkLayout,
+        variables: getClerkAppearanceVariables("light"),
+      }}
     >
       <JotaiProvider>
         <ModeThemeProvider
