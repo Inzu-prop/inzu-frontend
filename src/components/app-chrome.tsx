@@ -1,18 +1,26 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useOrganization } from "@clerk/nextjs";
 import { SideNav } from "@/components/nav";
 import { useAuthMe } from "@/hooks/use-auth-me";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 
 const AUTH_PATHS = ["/sign-in", "/sign-up"];
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isTenantUser, showOnboarding, loading } = useAuthMe();
+  const { isTenantUser, loading } = useAuthMe();
+  const { organization } = useOrganization();
+  const { organizationId, isLoaded: orgMappingLoaded } = useCurrentOrganizationId();
   const isAuthRoute = AUTH_PATHS.some((p) => pathname?.startsWith(p));
 
+  // Same source of truth as DashboardGate
+  const needsOnboarding =
+    orgMappingLoaded && !organization?.id && !organizationId;
+
   // Auth routes and onboarding render fullscreen — no sidebar
-  if (isAuthRoute || showOnboarding) {
+  if (isAuthRoute || needsOnboarding) {
     return <>{children}</>;
   }
 

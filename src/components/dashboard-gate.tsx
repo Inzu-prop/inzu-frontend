@@ -243,18 +243,22 @@ function OnboardingView() {
 }
 
 export function DashboardGate({ children }: { children: React.ReactNode }) {
-  const { isTenantUser, showOnboarding, loading, error, refetch } = useAuthMe();
+  const { isTenantUser, loading, error } = useAuthMe();
   const { organization } = useOrganization();
   const { organizationId, isLoaded: orgMappingLoaded } = useCurrentOrganizationId();
   const pathname = usePathname();
   const router = useRouter();
 
-  // When Clerk creates an org, refetch auth data so showOnboarding flips to false
-  useEffect(() => {
-    if (showOnboarding && organization?.id) {
-      refetch();
-    }
-  }, [showOnboarding, organization?.id, refetch]);
+  // The single source of truth for "needs onboarding":
+  // Clerk has no active organization AND the backend mapping has no org ID.
+  // This stays true until Clerk's CreateOrganization completes AND the
+  // backend mapping finishes — no race conditions, no stale data.
+  const needsOnboarding =
+    orgMappingLoaded && !organization?.id && !organizationId;
+
+  // Clerk org was just created but backend mapping is still resolving
+  const orgSetupInProgress =
+    !!organization?.id && (!orgMappingLoaded || !organizationId);
 
   useEffect(() => {
     if (loading || !isTenantUser) return;
@@ -264,7 +268,8 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     }
   }, [isTenantUser, loading, pathname, router]);
 
-  if (loading) {
+  // ── 1. Still loading auth state ──
+  if (loading || !orgMappingLoaded) {
     return (
       <DashboardShell>
         <Container className="py-10">
@@ -274,6 +279,7 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // ── 2. Auth error ──
   if (error) {
     return (
       <DashboardShell>
@@ -286,6 +292,7 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // ── 3. Tenant user → redirect to tenant portal ──
   if (isTenantUser) {
     const isTenantPath = pathname === "/tenant" || pathname?.startsWith("/tenant/");
     if (!isTenantPath) {
@@ -304,13 +311,13 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show onboarding only if backend says no orgs AND Clerk has no active org
-  if (showOnboarding && !organization?.id) {
+  // ── 4. No organization → show onboarding (fullscreen, no sidebar) ──
+  if (needsOnboarding) {
     return <OnboardingView />;
   }
 
-  // Clerk org exists but backend mapping is still resolving — show loading
-  if (organization?.id && (!orgMappingLoaded || !organizationId)) {
+  // ── 5. Org just created, backend mapping in progress ──
+  if (orgSetupInProgress) {
     return (
       <DashboardShell>
         <Container className="py-10">
@@ -320,5 +327,6 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // ── 6. Ready — render dashboard ──
   return <DashboardShell>{children}</DashboardShell>;
 }
