@@ -8,10 +8,11 @@ const AUTH_PATHS = ["/sign-in", "/sign-up"];
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isTenantUser, loading } = useAuthMe();
+  const { isTenantUser, showOnboarding, loading } = useAuthMe();
   const isAuthRoute = AUTH_PATHS.some((p) => pathname?.startsWith(p));
 
-  if (isAuthRoute) {
+  // Auth routes and onboarding render fullscreen — no sidebar
+  if (isAuthRoute || showOnboarding) {
     return <>{children}</>;
   }
 

@@ -11,7 +11,8 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm dlx:*)",
       "Bash(pnpm exec:*)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(node -e \"const c = require\\('@clerk/nextjs'\\); console.log\\(Object.keys\\(c\\).filter\\(k => k.toLowerCase\\(\\).includes\\('org'\\)\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }
