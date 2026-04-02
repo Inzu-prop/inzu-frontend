@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
-import { CreateOrganization } from "@clerk/nextjs";
+import { CreateOrganization, useOrganization } from "@clerk/nextjs";
 import { DashboardShell } from "@/components/nav/dashboard-shell";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import Container from "@/components/container";
@@ -243,9 +243,17 @@ function OnboardingView() {
 }
 
 export function DashboardGate({ children }: { children: React.ReactNode }) {
-  const { isTenantUser, showOnboarding, loading, error } = useAuthMe();
+  const { isTenantUser, showOnboarding, loading, error, refetch } = useAuthMe();
+  const { organization } = useOrganization();
   const pathname = usePathname();
   const router = useRouter();
+
+  // When Clerk creates an org, refetch auth data so showOnboarding flips to false
+  useEffect(() => {
+    if (showOnboarding && organization?.id) {
+      refetch();
+    }
+  }, [showOnboarding, organization?.id, refetch]);
 
   useEffect(() => {
     if (loading || !isTenantUser) return;
