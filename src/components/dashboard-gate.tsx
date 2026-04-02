@@ -39,8 +39,24 @@ const clerkOnboardingAppearance = {
       padding: "0",
       margin: "0",
       width: "100%",
+      maxWidth: "100%",
+      boxSizing: "border-box" as const,
+      overflow: "hidden",
     },
     rootBox: {
+      width: "100%",
+      maxWidth: "100%",
+    },
+    cardBox: {
+      boxShadow: "none",
+      border: "none",
+      width: "100%",
+      maxWidth: "100%",
+    },
+    form: {
+      width: "100%",
+    },
+    formFieldRow: {
       width: "100%",
     },
     headerTitle: { display: "none" },
@@ -57,6 +73,8 @@ const clerkOnboardingAppearance = {
       color: "#0f172a",
       borderRadius: "8px",
       fontSize: "14px",
+      width: "100%",
+      boxSizing: "border-box" as const,
     },
     formButtonPrimary: {
       background: "#32533D",
@@ -65,8 +83,16 @@ const clerkOnboardingAppearance = {
       fontSize: "14px",
       borderRadius: "8px",
       height: "40px",
+      width: "100%",
+      boxSizing: "border-box" as const,
     },
     footer: { display: "none" },
+    fileDropAreaBox: {
+      maxWidth: "100%",
+    },
+    avatarImageActionsUpload: {
+      maxWidth: "100%",
+    },
   },
   layout: {
     unsafe_disableDevelopmentModeWarnings: true,
@@ -165,6 +191,8 @@ function OnboardingView() {
           borderRadius: 14,
           border: "1px solid rgba(0,0,0,0.06)",
           padding: "36px 32px 32px",
+          overflow: "hidden",
+          boxSizing: "border-box" as const,
         }}
       >
         {/* Heading */}
