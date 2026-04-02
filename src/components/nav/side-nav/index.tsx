@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAtom } from "jotai";
-import { useOrganization } from "@clerk/nextjs";
+import { useClerk, useOrganization } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { mobileNavOpenAtom } from "@/lib/atoms";
 import Navigation from "./components/navigation";
@@ -12,6 +12,7 @@ export default function SideNav() {
   const [mobileOpen, setMobileOpen] = useAtom(mobileNavOpenAtom);
   const [hovered, setHovered] = useState(false);
   const { organization } = useOrganization();
+  const { openOrganizationProfile } = useClerk();
 
   const desktopExpanded = hovered;
 
@@ -53,7 +54,9 @@ export default function SideNav() {
         {/* Organization display pinned to bottom */}
         <div className="mt-auto px-3 pb-4">
           {organization && (
-            <div
+            <button
+              type="button"
+              onClick={() => openOrganizationProfile()}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -65,6 +68,17 @@ export default function SideNav() {
                 borderTop: "1px solid rgba(144,180,148,0.1)",
                 paddingTop: 10,
                 marginBottom: 0,
+                width: "100%",
+                border: "none",
+                cursor: "pointer",
+                transition: "background 0.18s ease",
+                textAlign: "left",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(144,180,148,0.14)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(144,180,148,0.07)";
               }}
             >
               {/* Org initials avatar */}
@@ -121,7 +135,7 @@ export default function SideNav() {
                   Organization
                 </div>
               </div>
-            </div>
+            </button>
           )}
         </div>
       </aside>
