@@ -6,6 +6,7 @@ import Image from "next/image";
 import { CreateOrganization, useOrganization } from "@clerk/nextjs";
 import { DashboardShell } from "@/components/nav/dashboard-shell";
 import { useAuthMe } from "@/hooks/use-auth-me";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import Container from "@/components/container";
 import { TenantMeProvider } from "@/contexts/tenant-me-context";
 import { TenantPortalShell } from "@/components/tenant-portal-shell";
@@ -244,6 +245,7 @@ function OnboardingView() {
 export function DashboardGate({ children }: { children: React.ReactNode }) {
   const { isTenantUser, showOnboarding, loading, error, refetch } = useAuthMe();
   const { organization } = useOrganization();
+  const { organizationId, isLoaded: orgMappingLoaded } = useCurrentOrganizationId();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -305,6 +307,17 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
   // Show onboarding only if backend says no orgs AND Clerk has no active org
   if (showOnboarding && !organization?.id) {
     return <OnboardingView />;
+  }
+
+  // Clerk org exists but backend mapping is still resolving — show loading
+  if (organization?.id && (!orgMappingLoaded || !organizationId)) {
+    return (
+      <DashboardShell>
+        <Container className="py-10">
+          <p className="text-muted-foreground">Setting up your organization…</p>
+        </Container>
+      </DashboardShell>
+    );
   }
 
   return <DashboardShell>{children}</DashboardShell>;
