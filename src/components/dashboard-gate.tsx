@@ -222,7 +222,6 @@ function OnboardingView() {
         {/* Clerk CreateOrganization */}
         <CreateOrganization
           appearance={clerkOnboardingAppearance}
-          afterCreateOrganizationUrl="/"
           skipInvitationScreen
         />
       </div>
@@ -303,7 +302,8 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (showOnboarding) {
+  // Show onboarding only if backend says no orgs AND Clerk has no active org
+  if (showOnboarding && !organization?.id) {
     return <OnboardingView />;
   }
 
