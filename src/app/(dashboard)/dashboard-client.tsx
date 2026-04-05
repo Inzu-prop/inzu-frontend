@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowUpRight, ArrowDownRight, Building2, Users, Wrench } from "lucide-react";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
@@ -8,6 +10,8 @@ import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/react-vchart";
+
+/* ── Types ─────────────────────────────────────────────── */
 
 type MonthlyTrend = {
   period: { period: string; start: string; end: string };
@@ -21,23 +25,37 @@ type TrendsResponse = {
   monthly?: MonthlyTrend[];
 };
 
-type SummaryResponse = Record<string, unknown>;
+type SummaryResponse = {
+  totalExpected?: number;
+  totalCollected?: number;
+  totalArrears?: number;
+  collectionRate?: number;
+  occupancyRate?: number;
+  totalProperties?: number;
+  totalUnits?: number;
+  totalTenants?: number;
+  openTickets?: number;
+  [key: string]: unknown;
+};
+
+/* ── Formatters ────────────────────────────────────────── */
 
 const formatKES = (amount: number) =>
   `KES ${Number(amount).toLocaleString()}`;
 
+const formatCompact = (amount: number) => {
+  if (amount >= 1_000_000) return `KES ${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `KES ${(amount / 1_000).toFixed(0)}K`;
+  return `KES ${amount.toLocaleString()}`;
+};
+
 const formatPct = (rate: number) =>
-  `${(rate * 100).toFixed(0)}%`;
+  `${(rate * (rate < 1 ? 100 : 1)).toFixed(0)}%`;
 
-const CURRENCY_KEYS = new Set([
-  "expected", "collected", "arrears", "totalExpected", "totalCollected",
-  "totalArrears", "amount", "rent", "monthlyRent", "balance",
-  "totalRent", "revenue", "income",
-]);
+const currentMonthName = () =>
+  new Date().toLocaleString("default", { month: "long", year: "numeric" });
 
-const PERCENT_KEYS = new Set([
-  "occupancyRate", "collectionRate", "occupancy", "rate",
-]);
+/* ── Component ─────────────────────────────────────────── */
 
 export default function DashboardClient() {
   const { organizationId } = useCurrentOrganizationId();
@@ -66,9 +84,9 @@ export default function DashboardClient() {
     setError(null);
 
     const now = new Date();
-    const fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const from = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const toMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    const fromMonth = `${fromDate.getUTCFullYear()}-${String(fromDate.getUTCMonth() + 1).padStart(2, "0")}`;
+    const fromMonth = `${from.getUTCFullYear()}-${String(from.getUTCMonth() + 1).padStart(2, "0")}`;
 
     Promise.all([
       api.dashboard
@@ -91,41 +109,19 @@ export default function DashboardClient() {
     };
   }, [api.dashboard, organizationId]);
 
-  const formatLabel = (raw: string) =>
-    raw.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim();
-
-  const formatValue = (key: string, value: unknown): string => {
-    if (value === null || value === undefined) return "—";
-    if (typeof value === "number") {
-      if (CURRENCY_KEYS.has(key)) return formatKES(value);
-      if (PERCENT_KEYS.has(key)) return formatPct(value);
-      return value.toLocaleString();
-    }
-    if (typeof value === "string") return value;
-    if (Array.isArray(value)) return `${value.length} items`;
-    return "—";
-  };
-
-  const extractMetrics = (data: Record<string, unknown> | null) => {
-    if (!data) return { primary: null as null | [string, unknown], rest: [] as [string, unknown][] };
-    const entries = Object.entries(data);
-    const numericEntries = entries.filter(
-      ([, value]) => typeof value === "number",
-    ) as [string, number][];
-
-    if (numericEntries.length === 0) {
-      return { primary: (entries[0] as [string, unknown]) ?? null, rest: entries.slice(1) };
-    }
-
-    const [primary, ...restNumeric] = numericEntries;
-    const numericKeys = new Set(restNumeric.map(([key]) => key).concat(primary[0]));
-    const rest = entries.filter(([key]) => !numericKeys.has(key));
-
-    return { primary, rest: [...restNumeric, ...rest] };
-  };
-
-  const { primary, rest } = extractMetrics(summary);
   const monthly = trends?.monthly ?? [];
+  const collected = summary?.totalCollected ?? 0;
+  const expected = summary?.totalExpected ?? 0;
+  const arrears = summary?.totalArrears ?? 0;
+  const collectionRate = summary?.collectionRate ?? (expected > 0 ? collected / expected : 0);
+  const occupancyRate = summary?.occupancyRate ?? 0;
+
+  // Derive month-over-month change from trends
+  const prevCollected = monthly.length >= 2 ? monthly[monthly.length - 2].collected : 0;
+  const momChange = prevCollected > 0
+    ? ((collected - prevCollected) / prevCollected) * 100
+    : 0;
+  const momPositive = momChange >= 0;
 
   const chartSpec: IBarChartSpec = {
     type: "bar",
@@ -141,23 +137,27 @@ export default function DashboardClient() {
     xField: "month",
     yField: "value",
     seriesField: "category",
-    padding: { top: 8, bottom: 8, left: 0, right: 0 },
+    padding: { top: 4, bottom: 4, left: 0, right: 0 },
     background: "transparent",
-    bar: { style: { cornerRadius: [4, 4, 0, 0] } },
+    bar: { style: { cornerRadius: [3, 3, 0, 0] } },
     legends: {
       visible: true,
       orient: "top",
-      padding: { bottom: 12 },
-      item: { label: { style: { fontSize: 11, fill: "rgba(245,247,246,0.5)" } } },
+      position: "start",
+      padding: { bottom: 8 },
+      item: {
+        shape: { style: { size: 6 } },
+        label: { style: { fontSize: 10, fill: "rgba(245,247,246,0.4)" } },
+      },
     },
     axes: [
       {
         orient: "left",
         domainLine: { visible: false },
-        grid: { style: { stroke: "rgba(144,180,148,0.08)", lineDash: [] } },
+        grid: { style: { stroke: "rgba(144,180,148,0.06)", lineDash: [] } },
         label: {
-          formatMethod: (val: unknown) => `KES ${Number(val).toLocaleString()}`,
-          style: { fontSize: 9, fill: "rgba(245,247,246,0.35)" },
+          formatMethod: (val: unknown) => formatCompact(Number(val)),
+          style: { fontSize: 9, fill: "rgba(245,247,246,0.3)" },
         },
         tick: { visible: false },
       },
@@ -165,7 +165,7 @@ export default function DashboardClient() {
         orient: "bottom",
         domainLine: { visible: false },
         grid: { visible: false },
-        label: { style: { fontSize: 9, fill: "rgba(245,247,246,0.35)" } },
+        label: { style: { fontSize: 9, fill: "rgba(245,247,246,0.3)" } },
         tick: { visible: false },
       },
     ],
@@ -182,52 +182,45 @@ export default function DashboardClient() {
     color: ["#2D4B3E", "#90B494"],
   };
 
-  // Skeleton shimmer bars
+  const hasData = summary && (collected > 0 || expected > 0);
+
+  /* ── Skeleton ──────────────────────────────────────────── */
   if (loading) {
     return (
       <Container className="py-8">
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                height: i === 1 ? 72 : 20,
-                borderRadius: 12,
-                background: "rgba(144,180,148,0.06)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.10) 50%, transparent 100%)",
-                  animation: "inzu-shimmer 1.6s infinite",
-                }}
-              />
-            </div>
-          ))}
+        <div className="space-y-4">
+          <div style={{ height: 14, width: 120, borderRadius: 6, background: "rgba(144,180,148,0.06)" }} />
+          <div style={{ height: 80, borderRadius: 16, background: "rgba(144,180,148,0.05)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.08) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite" }} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ height: 56, borderRadius: 12, background: "rgba(144,180,148,0.04)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.06) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite", animationDelay: `${i * 100}ms` }} />
+              </div>
+            ))}
+          </div>
         </div>
       </Container>
     );
   }
 
+  /* ── Main render ───────────────────────────────────────── */
   return (
     <RequireOrganization>
-      <Container className="space-y-8 py-8">
-        {/* Page label */}
+      <Container className="space-y-6 py-8">
+
+        {/* ── Page heading ─────────────────────────────────── */}
         <section
           className={visible ? "inzu-entrance inzu-entrance-1" : ""}
           style={{ opacity: 0 }}
         >
           <p
             style={{
-              fontSize: "0.62rem",
+              fontSize: "0.6rem",
               fontWeight: 400,
               letterSpacing: "0.22em",
               textTransform: "uppercase",
-              color: "rgba(245,247,246,0.35)",
             }}
             className="text-muted-foreground"
           >
@@ -236,170 +229,292 @@ export default function DashboardClient() {
         </section>
 
         {error && (
-          <p className="text-destructive text-sm" role="alert">
-            {error}
-          </p>
+          <p className="text-destructive text-sm" role="alert">{error}</p>
         )}
 
-        {!error && (
-          <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
+        {!error && !hasData && (
+          <div
+            className={`inzu-empty ${visible ? "inzu-entrance inzu-entrance-2" : ""}`}
+            style={{ opacity: 0 }}
+          >
+            <Building2 size={28} className="text-muted-foreground" style={{ opacity: 0.4 }} />
+            <p className="text-sm text-muted-foreground">
+              Add your first property to see your dashboard come alive.
+            </p>
+            <Link
+              href="/properties/new"
+              className="mt-1 text-xs font-medium text-[#90B494] underline underline-offset-4 hover:text-[#F5F7F6] transition-colors"
+            >
+              Add a property
+            </Link>
+          </div>
+        )}
 
-            {/* ── Primary truth panel ────────────────────────────── */}
-            <div
-              className={`inzu-card rounded-3xl px-7 py-6 space-y-6 ${visible ? "inzu-entrance inzu-entrance-2" : ""}`}
+        {!error && hasData && (
+          <>
+            {/* ── Hero: Net Collection ──────────────────────── */}
+            <section
+              className={`inzu-card rounded-3xl px-7 py-7 ${visible ? "inzu-entrance inzu-entrance-2" : ""}`}
               style={{ opacity: 0 }}
             >
-              <div className="space-y-3">
-                <p
-                  style={{
-                    fontSize: "0.60rem",
-                    fontWeight: 400,
-                    letterSpacing: "0.24em",
-                    textTransform: "uppercase",
-                  }}
-                  className="text-muted-foreground"
-                >
-                  Net Collection
-                </p>
-                {primary ? (
-                  <>
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                {/* Left: KPI */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
                     <p
                       style={{
-                        fontSize: "0.60rem",
-                        letterSpacing: "0.18em",
+                        fontSize: "0.58rem",
+                        fontWeight: 400,
+                        letterSpacing: "0.24em",
                         textTransform: "uppercase",
                       }}
                       className="text-muted-foreground"
                     >
-                      {formatLabel(primary[0])}
+                      Net Collection
                     </p>
-                    {/* Single truth — the KPI number */}
-                    <p className="inzu-kpi">
-                      {formatValue(primary[0], primary[1])}
+                    <span
+                      style={{
+                        fontSize: "0.55rem",
+                        letterSpacing: "0.06em",
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(144,180,148,0.08)",
+                      }}
+                      className="text-muted-foreground"
+                    >
+                      {currentMonthName()}
+                    </span>
+                  </div>
+
+                  <p className="inzu-kpi">{formatKES(collected)}</p>
+
+                  {/* MoM indicator */}
+                  {prevCollected > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      {momPositive ? (
+                        <ArrowUpRight size={14} style={{ color: "#90B494" }} />
+                      ) : (
+                        <ArrowDownRight size={14} style={{ color: "#E22026" }} />
+                      )}
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          fontFeatureSettings: '"tnum"',
+                          color: momPositive ? "#90B494" : "#E22026",
+                        }}
+                      >
+                        {momPositive ? "+" : ""}
+                        {momChange.toFixed(1)}%
+                      </span>
+                      <span
+                        style={{ fontSize: 11, marginLeft: 2 }}
+                        className="text-muted-foreground"
+                      >
+                        vs last month
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: secondary KPIs */}
+                <div className="flex gap-8">
+                  <div className="space-y-1">
+                    <p
+                      style={{ fontSize: "0.55rem", letterSpacing: "0.2em", textTransform: "uppercase" }}
+                      className="text-muted-foreground"
+                    >
+                      Expected
                     </p>
-                  </>
+                    <p
+                      style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", fontFeatureSettings: '"tnum"' }}
+                      className="text-foreground"
+                    >
+                      {formatKES(expected)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p
+                      style={{ fontSize: "0.55rem", letterSpacing: "0.2em", textTransform: "uppercase" }}
+                      className="text-muted-foreground"
+                    >
+                      Arrears
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 600,
+                        letterSpacing: "-0.02em",
+                        fontFeatureSettings: '"tnum"',
+                        color: arrears > 0 ? "#E22026" : undefined,
+                      }}
+                      className={arrears > 0 ? "" : "text-foreground"}
+                    >
+                      {formatKES(arrears)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p
+                      style={{ fontSize: "0.55rem", letterSpacing: "0.2em", textTransform: "uppercase" }}
+                      className="text-muted-foreground"
+                    >
+                      Collection
+                    </p>
+                    <p
+                      style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", fontFeatureSettings: '"tnum"' }}
+                      className="text-foreground"
+                    >
+                      {formatPct(collectionRate)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Secondary row: quick stats + trends chart ── */}
+            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+
+              {/* Quick stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <StatCard
+                  label="Occupancy"
+                  value={formatPct(occupancyRate)}
+                  visible={visible}
+                  delay={3}
+                />
+                <StatCard
+                  label="Properties"
+                  value={String(summary?.totalProperties ?? 0)}
+                  href="/properties"
+                  visible={visible}
+                  delay={4}
+                />
+                <StatCard
+                  label="Tenants"
+                  value={String(summary?.totalTenants ?? 0)}
+                  icon={<Users size={14} style={{ opacity: 0.4 }} />}
+                  href="/tenants"
+                  visible={visible}
+                  delay={5}
+                />
+                <StatCard
+                  label="Open Tickets"
+                  value={String(summary?.openTickets ?? 0)}
+                  icon={<Wrench size={14} style={{ opacity: 0.4 }} />}
+                  href="/maintenance"
+                  visible={visible}
+                  delay={6}
+                />
+              </div>
+
+              {/* Monthly trends chart */}
+              <div
+                className={`inzu-card rounded-2xl px-6 py-5 ${visible ? "inzu-entrance inzu-entrance-3" : ""}`}
+                style={{ opacity: 0 }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.55rem",
+                    fontWeight: 400,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    marginBottom: 12,
+                  }}
+                  className="text-muted-foreground"
+                >
+                  Monthly Trends
+                </p>
+
+                {monthly.length > 0 ? (
+                  <div style={{ height: 200 }}>
+                    <VChart spec={chartSpec} options={{ autoFit: true }} />
+                  </div>
                 ) : (
-                  <div className="inzu-empty">
-                    <p className="text-sm text-muted-foreground">No data yet</p>
-                    <button className="mt-1 text-xs font-medium text-[#90B494] underline underline-offset-4">
-                      Add a property to begin
-                    </button>
+                  <div
+                    style={{
+                      height: 200,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <p className="text-sm text-muted-foreground" style={{ opacity: 0.5 }}>
+                      No trend data yet
+                    </p>
                   </div>
                 )}
               </div>
-
-              {/* Supporting metrics — weight contrast, no grid lines */}
-              {rest.length > 0 && (
-                <dl
-                  style={{ paddingTop: "20px", borderTop: "1px solid rgba(144,180,148,0.08)" }}
-                  className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3"
-                >
-                  {rest.slice(0, 6).map(([key, value], i) => (
-                    <div
-                      key={key}
-                      className={`space-y-1 ${visible ? `inzu-entrance inzu-entrance-${Math.min(i + 3, 6)}` : ""}`}
-                      style={{ opacity: 0 }}
-                    >
-                      <dt
-                        style={{
-                          fontSize: "0.60rem",
-                          letterSpacing: "0.18em",
-                          textTransform: "uppercase",
-                        }}
-                        className="text-muted-foreground"
-                      >
-                        {formatLabel(key)}
-                      </dt>
-                      <dd
-                        style={{
-                          fontSize: "1rem",
-                          fontWeight: 600,
-                          letterSpacing: "-0.02em",
-                          fontFeatureSettings: '"tnum"',
-                        }}
-                        className="text-foreground"
-                      >
-                        {formatValue(key, value)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-            </div>
-
-            {/* ── Monthly trends panel ───────────────────────────── */}
-            <div
-              className={`inzu-card rounded-3xl px-7 py-6 space-y-5 ${visible ? "inzu-entrance inzu-entrance-3" : ""}`}
-              style={{ opacity: 0 }}
-            >
-              <p
-                style={{
-                  fontSize: "0.60rem",
-                  fontWeight: 400,
-                  letterSpacing: "0.24em",
-                  textTransform: "uppercase",
-                }}
-                className="text-muted-foreground"
-              >
-                Monthly trends
-              </p>
-
-              {monthly.length > 0 ? (
-                <>
-                  {/* Chart — floats in bg, no fill */}
-                  <div className="h-52">
-                    <VChart spec={chartSpec} options={{ autoFit: true }} />
-                  </div>
-
-                  {/* Row list — no grid lines, hover breath */}
-                  <div>
-                    {monthly.map((m) => (
-                      <div
-                        key={m.period.period}
-                        className="inzu-row flex items-center justify-between px-2 py-3 text-xs"
-                        style={{ paddingTop: 14, paddingBottom: 14 }}
-                      >
-                        <span
-                          style={{ fontWeight: 500, letterSpacing: "0.02em" }}
-                          className="text-muted-foreground"
-                        >
-                          {m.period.period}
-                        </span>
-                        <div
-                          className="flex gap-5 tabular-nums"
-                          style={{ fontFeatureSettings: '"tnum"' }}
-                        >
-                          <span className="text-muted-foreground">
-                            <span style={{ opacity: 0.45, marginRight: 4 }}>Exp</span>
-                            {formatKES(m.expected)}
-                          </span>
-                          <span style={{ color: "#90B494", fontWeight: 500 }}>
-                            <span style={{ opacity: 0.55, marginRight: 4, fontWeight: 400 }}>Col</span>
-                            {formatKES(m.collected)}
-                          </span>
-                          {m.arrears > 0 && (
-                            <span className="status-overdue">
-                              {formatKES(m.arrears)}
-                            </span>
-                          )}
-                          <span className="text-muted-foreground">
-                            <span style={{ opacity: 0.45, marginRight: 4 }}>Occ</span>
-                            {formatPct(m.occupancyRate)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="inzu-empty">
-                  <p className="text-sm text-muted-foreground">No trends data yet</p>
-                </div>
-              )}
-            </div>
-          </section>
+            </section>
+          </>
         )}
       </Container>
     </RequireOrganization>
   );
+}
+
+/* ── Stat card sub-component ─────────────────────────────── */
+
+function StatCard({
+  label,
+  value,
+  icon,
+  href,
+  visible,
+  delay,
+}: {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+  href?: string;
+  visible: boolean;
+  delay: number;
+}) {
+  const content = (
+    <div
+      className={`inzu-card rounded-2xl px-5 py-4 ${visible ? `inzu-entrance inzu-entrance-${Math.min(delay, 6)}` : ""}`}
+      style={{
+        opacity: 0,
+        cursor: href ? "pointer" : "default",
+        transition: "background 0.18s ease",
+      }}
+      onMouseEnter={(e) => {
+        if (href) e.currentTarget.style.background = "rgba(50, 83, 61, 0.16)";
+      }}
+      onMouseLeave={(e) => {
+        if (href) e.currentTarget.style.background = "";
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <p
+          style={{
+            fontSize: "0.55rem",
+            fontWeight: 400,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+          }}
+          className="text-muted-foreground"
+        >
+          {label}
+        </p>
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+      </div>
+      <p
+        style={{
+          fontSize: 22,
+          fontWeight: 600,
+          letterSpacing: "-0.02em",
+          fontFeatureSettings: '"tnum"',
+          marginTop: 6,
+        }}
+        className="text-foreground"
+      >
+        {value}
+      </p>
+    </div>
+  );
+
+  if (href) {
+    return <Link href={href} style={{ textDecoration: "none" }}>{content}</Link>;
+  }
+  return content;
 }
