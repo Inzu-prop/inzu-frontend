@@ -182,7 +182,8 @@ export default function DashboardClient() {
     color: ["#2D4B3E", "#90B494"],
   };
 
-  const hasData = summary && (collected > 0 || expected > 0);
+  const totalProperties = (summary?.totalProperties as number) ?? 0;
+  const hasData = summary && (totalProperties > 0 || collected > 0 || expected > 0);
 
   /* ── Skeleton ──────────────────────────────────────────── */
   if (loading) {
