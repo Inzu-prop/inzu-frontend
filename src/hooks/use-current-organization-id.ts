@@ -51,6 +51,9 @@ export function useCurrentOrganizationId(): {
         return;
       }
 
+      // Reset while we resolve the backend mapping for this org
+      setMappingLoaded(false);
+
       try {
         // Check if we already have the mapping stored
         if (typeof window !== "undefined") {
@@ -67,41 +70,44 @@ export function useCurrentOrganizationId(): {
           }
         }
 
-        // Small delay to ensure Clerk session is fully established
-        // This helps avoid race conditions where token isn't ready yet
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        // Retry loop — token may not be ready immediately after org creation
+        const MAX_ATTEMPTS = 5;
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+          if (cancelled) return;
 
-        // Verify we have a token before making the request
-        const token = await getToken();
-        if (!token) {
-          if (!cancelled) {
-            setMappingLoaded(true);
+          // Wait before each attempt (longer on retries)
+          await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 300 : 1000));
+          if (cancelled) return;
+
+          const token = await getToken();
+          if (!token) continue;
+
+          try {
+            const response = (await api.auth.createOrganization({
+              name: organization.name ?? organization.slug ?? "Untitled organization",
+            })) as AuthOrganizationResponse;
+            const newId = response?.organization?._id ?? null;
+
+            if (newId && !cancelled) {
+              setInzuOrganizationId(newId);
+              setMappingLoaded(true);
+
+              if (typeof window !== "undefined") {
+                const raw = window.localStorage.getItem(INZU_ORG_ID_MAP_STORAGE_KEY);
+                const map: Record<string, string> = raw ? JSON.parse(raw) : {};
+                map[organization.id] = newId;
+                window.localStorage.setItem(INZU_ORG_ID_MAP_STORAGE_KEY, JSON.stringify(map));
+              }
+              return;
+            }
+          } catch {
+            // Retry on failure
           }
-          return;
         }
 
-        const response = (await api.auth.createOrganization({
-          name: organization.name ?? organization.slug ?? "Untitled organization",
-        })) as AuthOrganizationResponse;
-        const newId = response?.organization?._id ?? null;
-
-        if (!newId) {
-          if (!cancelled) {
-            setMappingLoaded(true);
-          }
-          return;
-        }
-
+        // All attempts exhausted
         if (!cancelled) {
-          setInzuOrganizationId(newId);
           setMappingLoaded(true);
-        }
-
-        if (typeof window !== "undefined") {
-          const raw = window.localStorage.getItem(INZU_ORG_ID_MAP_STORAGE_KEY);
-          const map: Record<string, string> = raw ? JSON.parse(raw) : {};
-          map[organization.id] = newId;
-          window.localStorage.setItem(INZU_ORG_ID_MAP_STORAGE_KEY, JSON.stringify(map));
         }
       } catch {
         if (!cancelled) {
