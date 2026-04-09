@@ -34,10 +34,10 @@ export default function SideNav() {
           WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(144, 180, 148, 0.15)",
           borderRadius: "0 16px 16px 0",
+          willChange: "width",
         }}
         className={cn(
           "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] shrink-0 flex-col overflow-x-hidden",
-          "laptop:sticky",
           "transition-[width,transform] duration-[400ms] ease-luxury",
           // Mobile: slide in/out at full width
           mobileOpen ? "translate-x-0 w-[200px]" : "-translate-x-full laptop:translate-x-0",

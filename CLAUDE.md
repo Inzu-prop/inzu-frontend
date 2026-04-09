@@ -31,6 +31,8 @@ pnpm start      # Start production server
 pnpm lint       # ESLint
 ```
 
+> Use `pnpm` — a `pnpm-lock.yaml` is present. The README incorrectly shows `npm`.
+
 ---
 
 ## Environment Variables
@@ -89,6 +91,18 @@ All API calls use `Authorization: Bearer <token>` and include org ID. Errors thr
 **Hook:** `useInzuApi()` in `src/hooks/use-inzu-api.ts` returns a memoized API client instance, combining Clerk hooks + `useCurrentOrganizationId()`.
 
 **Domains:** `auth`, `tenant`, `dashboard`, `properties`, `units`, `tenants`, `invoices`, `mpesaPayments`, `payments`, `arrears`, `maintenance`, `reports`.
+
+**API module structure:** `src/lib/api/client.ts` contains all domain methods on the client object. Per-domain types live in separate files (`properties.ts`, `units.ts`, `invoices.ts`, etc.) and are re-exported from `src/lib/api/index.ts`.
+
+**Payment status polling:** `use-payment-status.tsx` in `src/hooks/` handles M-Pesa STK push confirmation — polls `GET /api/payments/:paymentId` with exponential backoff, stops on `confirmed`/`failed`/`expired`. See `Payments integration.md` for full flow and status transitions.
+
+### Auth Middleware
+
+`src/middleware.ts` uses Clerk middleware to protect all routes except `/sign-in` and `/sign-up`. All other routes call `auth.protect()` — no per-page auth guards needed.
+
+### Tenant Status Values
+
+Valid values for tenant `status` field (from backend): `active`, `inactive`, `blacklisted`, `prospective`. Updated via `PUT /api/organizations/:organizationId/tenants/:tenantId` with `{ status: "..." }`. Requires `MANAGE_TENANTS` permission.
 
 ### State (Jotai)
 

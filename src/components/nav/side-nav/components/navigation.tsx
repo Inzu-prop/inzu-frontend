@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navigations } from "@/config/site";
+import { cn } from "@/lib/utils";
 
 interface NavigationProps {
   onNavigate?: () => void;
@@ -26,41 +27,15 @@ export default function Navigation({ onNavigate, expanded = true }: NavigationPr
             href={navigation.href}
             onClick={onNavigate}
             title={!expanded ? navigation.name : undefined}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "9px 10px",
-              borderRadius: 12,
-              background: isActive ? "rgba(245,247,246,0.10)" : "transparent",
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-              position: "relative",
-              transition: "background 0.18s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (!isActive) e.currentTarget.style.background = "rgba(144,180,148,0.10)";
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) e.currentTarget.style.background = "transparent";
-            }}
-          >
-            {/* Active left indicator */}
-            {isActive && (
-              <span
-                style={{
-                  position: "absolute",
-                  left: -12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: 3,
-                  height: 18,
-                  background: "#90B494",
-                  borderRadius: "0 3px 3px 0",
-                }}
-              />
+            className={cn(
+              "group flex items-center gap-3 rounded-xl px-[10px] py-[9px]",
+              "transition-[background,box-shadow] duration-[180ms] ease-out",
+              "relative whitespace-nowrap no-underline",
+              isActive
+                ? "bg-[rgba(245,247,246,0.10)] shadow-[inset_3px_0_0_0_#90B494]"
+                : "bg-transparent hover:bg-[rgba(144,180,148,0.10)]"
             )}
-
+          >
             {/* Icon */}
             <span
               style={{
