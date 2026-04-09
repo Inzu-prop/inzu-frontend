@@ -11,26 +11,18 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
   const showFull = expanded || mobileOpen;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: showFull ? "flex-start" : "center",
-        padding: "20px 12px",
-        minHeight: 64,
-        transition: "justify-content 0.3s ease",
-      }}
-    >
-      {/* Favicon — visible only when collapsed */}
+    <div style={{ position: "relative", height: 64, flexShrink: 0 }}>
+      {/* Favicon — centered, shown when collapsed */}
       <div
         style={{
-          opacity: showFull ? 0 : 1,
-          transition: "opacity 0.2s ease",
-          position: showFull ? "absolute" : "relative",
-          pointerEvents: showFull ? "none" : "auto",
+          position: "absolute",
+          inset: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          opacity: showFull ? 0 : 1,
+          transition: "opacity 0.18s ease",
+          pointerEvents: showFull ? "none" : "auto",
         }}
       >
         <Image
@@ -43,15 +35,17 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
         />
       </div>
 
-      {/* Typeface wordmark — visible only when expanded */}
+      {/* Wordmark — left-aligned, shown when expanded */}
       <div
         style={{
-          opacity: showFull ? 1 : 0,
-          transition: "opacity 0.2s ease 0.12s",
-          position: showFull ? "relative" : "absolute",
-          pointerEvents: showFull ? "auto" : "none",
+          position: "absolute",
+          inset: 0,
           display: "flex",
           alignItems: "center",
+          paddingLeft: 16,
+          opacity: showFull ? 1 : 0,
+          transition: "opacity 0.18s ease 0.1s",
+          pointerEvents: showFull ? "auto" : "none",
         }}
       >
         <Image

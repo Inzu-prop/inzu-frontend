@@ -272,8 +272,22 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
   if (loading || !orgMappingLoaded) {
     return (
       <DashboardShell>
-        <Container className="py-10">
-          <p className="text-muted-foreground">Loading…</p>
+        <Container className="py-8">
+          <div className="space-y-4">
+            <div style={{ height: 12, width: 100, borderRadius: 6, background: "rgba(144,180,148,0.07)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.12) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite" }} />
+            </div>
+            <div style={{ height: 80, borderRadius: 16, background: "rgba(144,180,148,0.05)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.08) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite" }} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ height: 56, borderRadius: 12, background: "rgba(144,180,148,0.04)", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.06) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite", animationDelay: `${i * 120}ms` }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </Container>
       </DashboardShell>
     );
@@ -320,8 +334,10 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
   if (orgSetupInProgress) {
     return (
       <DashboardShell>
-        <Container className="py-10">
-          <p className="text-muted-foreground">Setting up your organization…</p>
+        <Container className="py-8">
+          <div style={{ height: 80, borderRadius: 16, background: "rgba(144,180,148,0.05)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(144,180,148,0.08) 50%, transparent 100%)", animation: "inzu-shimmer 1.6s infinite" }} />
+          </div>
         </Container>
       </DashboardShell>
     );

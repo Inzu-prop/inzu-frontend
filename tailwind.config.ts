@@ -65,7 +65,7 @@ const config = {
         },
         inzu: {
           forest: "#32533D",
-          "forest-deep": "#32533D",
+          "forest-deep": "#2D4B3E",
           sage: "#90B494",
           obsidian: "#13270D",
           cedar: "#825D42",
