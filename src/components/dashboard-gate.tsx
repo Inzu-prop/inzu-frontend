@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { CreateOrganization, useOrganization } from "@clerk/nextjs";
+import { CreateOrganization, useOrganization, useOrganizationList } from "@clerk/nextjs";
 import { DashboardShell } from "@/components/nav/dashboard-shell";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
@@ -245,9 +245,29 @@ function OnboardingView() {
 export function DashboardGate({ children }: { children: React.ReactNode }) {
   const { isTenantUser, loading, error } = useAuthMe();
   const { organization } = useOrganization();
-  const { organizationId, isLoaded: orgMappingLoaded } = useCurrentOrganizationId();
+  const orgList = useOrganizationList({ userMemberships: { infinite: true } });
+  const { organizationId, isLoaded: orgMappingLoaded, error: orgSetupError, retry: retryOrgSetup } = useCurrentOrganizationId();
   const pathname = usePathname();
   const router = useRouter();
+  const activatingOrgRef = useRef(false);
+
+  // Auto-activate an org when Clerk has none active but the user belongs to one.
+  // This handles cross-device scenarios: org created on Device B, Device A refreshes
+  // and Clerk knows the membership but hasn't set an active org for this session.
+  useEffect(() => {
+    if (!orgList.isLoaded || organization?.id || activatingOrgRef.current) return;
+
+    const userMemberships = orgList.userMemberships?.data;
+    const firstOrg = userMemberships?.[0]?.organization;
+    if (firstOrg?.id) {
+      activatingOrgRef.current = true;
+      orgList.setActive?.({ organization: firstOrg.id }).then(() => {
+        activatingOrgRef.current = false;
+      }).catch(() => {
+        activatingOrgRef.current = false;
+      });
+    }
+  }, [orgList.isLoaded, orgList.userMemberships?.data, orgList.setActive, organization?.id]);
 
   // The single source of truth for "needs onboarding":
   // Clerk has no active organization AND the backend mapping has no org ID.
@@ -316,7 +336,26 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     return <OnboardingView />;
   }
 
-  // ── 5. Org just created, backend mapping in progress ──
+  // ── 5. Org just created, backend mapping failed ──
+  if (orgSetupError) {
+    return (
+      <DashboardShell>
+        <Container className="py-10">
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-destructive" role="alert">{orgSetupError}</p>
+            <button
+              onClick={retryOrgSetup}
+              className="rounded-lg bg-inzu-forest px-4 py-2 text-sm font-medium text-inzu-silk transition-colors hover:bg-inzu-forest-deep"
+            >
+              Try again
+            </button>
+          </div>
+        </Container>
+      </DashboardShell>
+    );
+  }
+
+  // ── 6. Org just created, backend mapping in progress ──
   if (orgSetupInProgress) {
     return (
       <DashboardShell>
@@ -327,6 +366,6 @@ export function DashboardGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // ── 6. Ready — render dashboard ──
+  // ── 7. Ready — render dashboard ──
   return <DashboardShell>{children}</DashboardShell>;
 }
