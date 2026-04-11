@@ -179,7 +179,7 @@ export default function DashboardClient() {
         ],
       },
     },
-    color: ["#2D4B3E", "#90B494"],
+    color: ["#90B494", "#825D42"],
   };
 
   const totalProperties = (summary?.totalProperties as number) ?? 0;
