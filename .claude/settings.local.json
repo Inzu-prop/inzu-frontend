@@ -14,7 +14,8 @@
       "Bash(pnpm lint:*)",
       "Bash(node -e \"const c = require\\('@clerk/nextjs'\\); console.log\\(Object.keys\\(c\\).filter\\(k => k.toLowerCase\\(\\).includes\\('org'\\)\\).join\\('\\\\n'\\)\\)\")",
       "Bash(npx next:*)",
-      "Bash(find /c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app/sign-up -name \"page.tsx\" -exec cat {} \\\\;)"
+      "Bash(find /c/Users/Admin/Desktop/Projects/INZU/inzu-frontend/src/app/sign-up -name \"page.tsx\" -exec cat {} \\\\;)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
