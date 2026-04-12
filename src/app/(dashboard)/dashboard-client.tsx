@@ -63,6 +63,7 @@ export default function DashboardClient() {
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
+  const [propertyCount, setPropertyCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -95,6 +96,20 @@ export default function DashboardClient() {
       api.dashboard
         .getTrends({ from: fromMonth, to: toMonth })
         .then((res) => (!cancelled ? setTrends(res as TrendsResponse) : undefined)),
+      api.properties
+        .list({ limit: "1" })
+        .then((res) => {
+          if (cancelled) return;
+          const total =
+            (res as { pagination?: { total?: number }; properties?: unknown[] })
+              ?.pagination?.total ??
+            (res as { properties?: unknown[] })?.properties?.length ??
+            0;
+          setPropertyCount(total);
+        })
+        .catch(() => {
+          if (!cancelled) setPropertyCount(0);
+        }),
     ])
       .catch((err) => {
         if (cancelled) return;
@@ -107,7 +122,7 @@ export default function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [api.dashboard, organizationId]);
+  }, [api.dashboard, api.properties, organizationId]);
 
   const monthly = trends?.monthly ?? [];
   const collected = summary?.totalCollected ?? 0;
@@ -182,8 +197,10 @@ export default function DashboardClient() {
     color: ["#90B494", "#825D42"],
   };
 
-  const totalProperties = (summary?.totalProperties as number) ?? 0;
-  const hasData = summary && (totalProperties > 0 || collected > 0 || expected > 0);
+  const totalProperties =
+    (summary?.totalProperties as number) ?? propertyCount ?? 0;
+  const hasData =
+    totalProperties > 0 || collected > 0 || expected > 0;
 
   /* ── Skeleton ──────────────────────────────────────────── */
   if (loading) {
