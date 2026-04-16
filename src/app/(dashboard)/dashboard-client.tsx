@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Building2, Users, Wrench } from "lucide-react";
 import Container from "@/components/container";
@@ -58,8 +59,14 @@ const currentMonthName = () =>
 /* ── Component ─────────────────────────────────────────── */
 
 export default function DashboardClient() {
+  const { resolvedTheme } = useTheme();
   const { organizationId } = useCurrentOrganizationId();
   const api = useInzuApi();
+
+  const axisLabelColor =
+    resolvedTheme === "dark"
+      ? "rgba(245,247,246,0.35)"
+      : "rgba(19,39,13,0.45)";
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
@@ -162,7 +169,7 @@ export default function DashboardClient() {
       padding: { bottom: 8 },
       item: {
         shape: { style: { size: 6 } },
-        label: { style: { fontSize: 10, fill: "rgba(245,247,246,0.4)" } },
+        label: { style: { fontSize: 10, fill: axisLabelColor } },
       },
     },
     axes: [
@@ -172,7 +179,7 @@ export default function DashboardClient() {
         grid: { style: { stroke: "rgba(144,180,148,0.06)", lineDash: [] } },
         label: {
           formatMethod: (val: unknown) => formatCompact(Number(val)),
-          style: { fontSize: 9, fill: "rgba(245,247,246,0.3)" },
+          style: { fontSize: 9, fill: axisLabelColor },
         },
         tick: { visible: false },
       },
@@ -180,7 +187,7 @@ export default function DashboardClient() {
         orient: "bottom",
         domainLine: { visible: false },
         grid: { visible: false },
-        label: { style: { fontSize: 9, fill: "rgba(245,247,246,0.3)" } },
+        label: { style: { fontSize: 9, fill: axisLabelColor } },
         tick: { visible: false },
       },
     ],
