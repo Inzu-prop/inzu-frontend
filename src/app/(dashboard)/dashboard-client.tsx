@@ -499,6 +499,7 @@ function StatCard({
       className={`inzu-card rounded-2xl px-5 py-4 ${visible ? `inzu-entrance inzu-entrance-${Math.min(delay, 6)}` : ""}`}
       style={{
         opacity: 0,
+        height: "100%",
         cursor: href ? "pointer" : "default",
         transition: "background 0.18s ease",
       }}
@@ -539,7 +540,7 @@ function StatCard({
   );
 
   if (href) {
-    return <Link href={href} style={{ textDecoration: "none" }}>{content}</Link>;
+    return <Link href={href} style={{ textDecoration: "none", display: "block", height: "100%" }}>{content}</Link>;
   }
   return content;
 }
