@@ -12,16 +12,19 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
 
   return (
     <div style={{ position: "relative", height: 64, flexShrink: 0 }}>
-      {/* Favicon — centered, shown when collapsed */}
+      {/* Favicon — centered, shown when collapsed. Fades back in immediately; out on expand. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
+          width: 64,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           opacity: showFull ? 0 : 1,
-          transition: "opacity 0.18s ease",
+          transition: showFull
+            ? "opacity 120ms ease"
+            : "opacity 180ms ease 140ms",
           pointerEvents: showFull ? "none" : "auto",
         }}
       >
@@ -35,7 +38,7 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
         />
       </div>
 
-      {/* Wordmark — left-aligned, shown when expanded */}
+      {/* Wordmark — left-aligned, shown when expanded. Fades in after width; out immediately. */}
       <div
         style={{
           position: "absolute",
@@ -44,7 +47,9 @@ export default function User({ expanded = true, mobileOpen = false }: UserProps)
           alignItems: "center",
           paddingLeft: 16,
           opacity: showFull ? 1 : 0,
-          transition: "opacity 0.18s ease 0.1s",
+          transition: showFull
+            ? "opacity 180ms ease 140ms"
+            : "opacity 120ms ease",
           pointerEvents: showFull ? "auto" : "none",
         }}
       >
