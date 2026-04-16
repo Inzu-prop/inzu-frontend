@@ -145,25 +145,36 @@ export default function PropertyUnitsPage() {
 
   // Edit / delete
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNumber, setEditNumber] = useState("");
   const [editRent, setEditRent] = useState("");
+  const [editDeposit, setEditDeposit] = useState("");
   const [editType, setEditType] = useState<UnitType | "">("");
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleEdit = (u: Unit) => {
     setEditingId(u._id);
+    setEditNumber(u.unitNumber ?? "");
     setEditRent(u.rentAmount != null ? String(u.rentAmount) : "");
+    setEditDeposit(u.depositAmount != null ? String(u.depositAmount) : "");
     setEditType((u.type as UnitType) ?? "");
+    setEditError(null);
   };
 
   const handleEditSubmit = (e: React.FormEvent, unitId: string) => {
     e.preventDefault();
+    if (!editNumber.trim()) { setEditError("Unit number is required."); return; }
+    setEditError(null);
     setEditSubmitting(true);
-    const body: { type?: UnitType; rentAmount?: number } = {};
+    const body: { unitNumber?: string; type?: UnitType; rentAmount?: number; depositAmount?: number } = {};
+    body.unitNumber = editNumber.trim();
     if (editType) body.type = editType;
     if (editRent.trim() !== "") body.rentAmount = parseFloat(editRent) || 0;
+    if (editDeposit.trim() !== "") body.depositAmount = parseFloat(editDeposit) || 0;
     api.units.update(unitId, body)
       .then(() => { setEditingId(null); fetchUnits(); })
+      .catch((err) => setEditError(err instanceof ApiError ? err.message : String(err)))
       .finally(() => setEditSubmitting(false));
   };
 
@@ -368,32 +379,55 @@ export default function PropertyUnitsPage() {
                       <td colSpan={6} className="px-4 py-2">
                         <form
                           onSubmit={(e) => handleEditSubmit(e, u._id)}
-                          className="flex flex-wrap items-center gap-2"
+                          className="space-y-2"
                         >
-                          <span className="font-medium w-16">{u.unitNumber}</span>
-                          <select
-                            value={editType}
-                            onChange={(e) => setEditType((e.target.value || "") as UnitType | "")}
-                            className={inputCls}
-                            style={{ width: 150 }}
-                          >
-                            <option value="">— Type —</option>
-                            {UNIT_TYPES.map((t) => (
-                              <option key={t} value={t}>{UNIT_TYPE_LABELS[t]}</option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            min={0}
-                            step="any"
-                            value={editRent}
-                            onChange={(e) => setEditRent(e.target.value)}
-                            className={inputCls}
-                            placeholder="Rent"
-                            style={{ width: 100 }}
-                          />
-                          <Button type="submit" size="sm" disabled={editSubmitting}>Save</Button>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              type="text"
+                              value={editNumber}
+                              onChange={(e) => setEditNumber(e.target.value)}
+                              className={inputCls}
+                              placeholder="Unit number"
+                              style={{ width: 110 }}
+                              required
+                            />
+                            <select
+                              value={editType}
+                              onChange={(e) => setEditType((e.target.value || "") as UnitType | "")}
+                              className={inputCls}
+                              style={{ width: 150 }}
+                            >
+                              <option value="">— Type —</option>
+                              {UNIT_TYPES.map((t) => (
+                                <option key={t} value={t}>{UNIT_TYPE_LABELS[t]}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={editRent}
+                              onChange={(e) => setEditRent(e.target.value)}
+                              className={inputCls}
+                              placeholder="Rent"
+                              style={{ width: 100 }}
+                            />
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={editDeposit}
+                              onChange={(e) => setEditDeposit(e.target.value)}
+                              className={inputCls}
+                              placeholder="Deposit"
+                              style={{ width: 100 }}
+                            />
+                            <Button type="submit" size="sm" disabled={editSubmitting}>
+                              {editSubmitting ? "Saving…" : "Save"}
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
+                          </div>
+                          {editError && <p className="text-xs text-destructive">{editError}</p>}
                         </form>
                       </td>
                     ) : (

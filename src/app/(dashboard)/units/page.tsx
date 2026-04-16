@@ -123,10 +123,23 @@ function UnitsPageContent() {
     api.units.delete(unitId).then(() => fetchUnits()).finally(() => setDeletingId(null));
   };
 
+  // Search + filter
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<UnitType | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "occupied" | "vacant" | "maintenance">("all");
+
+  const filtered = (data ?? []).filter((u) => {
+    const q = search.toLowerCase();
+    const matchesSearch = !q || (u.unitNumber ?? "").toLowerCase().includes(q);
+    const matchesType = typeFilter === "all" || u.type === typeFilter;
+    const matchesStatus = statusFilter === "all" || u.status === statusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
   // Bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const allIds = data?.map((u) => u._id) ?? [];
+  const allIds = filtered.map((u) => u._id);
   const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
   const someSelected = selected.size > 0 && !allSelected;
 
@@ -231,7 +244,9 @@ function UnitsPageContent() {
             <h1 className="text-xl font-semibold tracking-tight">Units</h1>
             {data && (
               <p className="mt-0.5 text-sm text-muted-foreground">
-                {data.length} {data.length === 1 ? "unit" : "units"}
+                {filtered.length === data.length
+                  ? `${data.length} ${data.length === 1 ? "unit" : "units"}`
+                  : `${filtered.length} of ${data.length} units`}
                 {propertyIdParam && " in this property"}
               </p>
             )}
@@ -246,6 +261,76 @@ function UnitsPageContent() {
             Showing units for one property.{" "}
             <Link href="/units" className="text-primary hover:underline">Show all units</Link>
           </p>
+        )}
+
+        {/* Search + filter bar */}
+        {data && data.length > 0 && (
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            <input
+              type="search"
+              placeholder="Search units…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: "1 1 180px",
+                minWidth: 0,
+                height: 34,
+                borderRadius: 8,
+                border: "1px solid hsl(var(--border))",
+                background: "hsl(var(--background))",
+                padding: "0 12px",
+                fontSize: 13,
+                outline: "none",
+                color: "inherit",
+              }}
+            />
+            {/* Type pills */}
+            <div className="flex gap-1 flex-wrap">
+              {([["all", "All types"], ...UNIT_TYPES.map((t) => [t, UNIT_TYPE_LABELS[t]])] as [string, string][]).map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setTypeFilter(val as UnitType | "all")}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    padding: "4px 10px",
+                    borderRadius: 20,
+                    cursor: "pointer",
+                    transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                    background: typeFilter === val ? "rgba(144,180,148,0.15)" : "transparent",
+                    color: typeFilter === val ? "#90B494" : "hsl(var(--muted-foreground))",
+                    border: typeFilter === val ? "1px solid rgba(144,180,148,0.3)" : "1px solid hsl(var(--border))",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Status pills */}
+            <div className="flex gap-1 flex-wrap">
+              {(["all", "occupied", "vacant", "maintenance"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    padding: "4px 10px",
+                    borderRadius: 20,
+                    cursor: "pointer",
+                    transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                    background: statusFilter === s ? "rgba(144,180,148,0.15)" : "transparent",
+                    color: statusFilter === s ? "#90B494" : "hsl(var(--muted-foreground))",
+                    border: statusFilter === s ? "1px solid rgba(144,180,148,0.3)" : "1px solid hsl(var(--border))",
+                  }}
+                >
+                  {s === "all" ? "All statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Bulk-action toolbar */}
@@ -290,7 +375,11 @@ function UnitsPageContent() {
           </div>
         )}
 
-        {!loading && !error && data && data.length > 0 && (
+        {!loading && !error && data && data.length > 0 && filtered.length === 0 && (
+          <p className="text-sm text-muted-foreground">No units match your search.</p>
+        )}
+
+        {!loading && !error && data && filtered.length > 0 && (
           <div className="overflow-hidden rounded-md border border-border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
@@ -314,7 +403,7 @@ function UnitsPageContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.map((u) => (
+                {filtered.map((u) => (
                   <tr
                     key={u._id}
                     className={`hover:bg-muted/30 transition-colors ${selected.has(u._id) ? "bg-[#32533D]/5" : ""}`}
