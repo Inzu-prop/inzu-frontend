@@ -8,14 +8,12 @@ import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
 import type { GeneratedInvoice, GenerateInvoicesResponse, InvoiceListItem } from "@/lib/api";
-import PaymentStatus from "@/components/payment-status";
+import MpesaPaymentModal from "@/components/mpesa-payment-modal";
 
 function currentYearMonth(): string {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
-} //
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 function formatAmount(amount?: number): string {
   if (amount == null) return "—";
@@ -25,39 +23,54 @@ function formatAmount(amount?: number): string {
   }).format(amount);
 }
 
-function statusClass(status?: string): string {
-  switch (status?.toLowerCase()) {
-    case "paid":
-      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
-    case "overdue":
-      return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
-    case "pending":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
-}
-//
-type GenerateResult =
-  | { type: "success"; data: GenerateInvoicesResponse }
-  | { type: "error"; message: string };
+/* ── Status badge — inzu brand tokens ────────────────────── */
+function StatusBadge({ status }: { status?: string }) {
+  const s = status?.toLowerCase();
+  let bg = "rgba(144,180,148,0.08)";
+  let color = "rgba(245,247,246,0.45)";
 
-function GeneratePanel({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+  if (s === "paid") {
+    bg = "rgba(144,180,148,0.12)";
+    color = "#90B494";
+  } else if (s === "overdue") {
+    bg = "rgba(226,32,38,0.10)";
+    color = "#E22026";
+  } else if (s === "pending") {
+    bg = "rgba(130,93,66,0.12)";
+    color = "#825D42";
+  }
+
+  return (
+    <span
+      style={{
+        background: bg,
+        color,
+        fontSize: 10,
+        fontWeight: 500,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        padding: "3px 9px",
+        borderRadius: 20,
+      }}
+    >
+      {status ?? "—"}
+    </span>
+  );
+}
+
+/* ── Generate invoices panel ──────────────────────────────── */
+function GeneratePanel({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const api = useInzuApi();
   const [period, setPeriod] = useState(currentYearMonth());
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<GenerateResult | null>(null);
+  const [result, setResult] = useState<
+    | { type: "success"; data: GenerateInvoicesResponse }
+    | { type: "error"; message: string }
+    | null
+  >(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   async function handleGenerate() {
     setSubmitting(true);
@@ -67,21 +80,25 @@ function GeneratePanel({
       setResult({ type: "success", data });
       onSuccess();
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : String(err);
-      setResult({ type: "error", message });
+      setResult({ type: "error", message: err instanceof ApiError ? err.message : String(err) });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+    <div
+      style={{
+        background: "rgba(144,180,148,0.05)",
+        border: "1px solid rgba(144,180,148,0.12)",
+        borderRadius: 12,
+        padding: "16px 18px",
+      }}
+      className="space-y-4"
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="font-semibold text-sm">Generate invoices</h3>
+          <h3 className="text-sm font-semibold">Generate invoices</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Creates rent invoices for all eligible tenants in the selected month.
           </p>
@@ -105,87 +122,65 @@ function GeneratePanel({
             id="invoice-period"
             type="month"
             value={period}
-            onChange={(e) => {
-              setPeriod(e.target.value);
-              setResult(null);
-            }}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            onChange={(e) => { setPeriod(e.target.value); setResult(null); }}
+            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <Button
-          size="sm"
-          onClick={handleGenerate}
-          disabled={submitting || !period}
-        >
+        <Button size="sm" onClick={() => void handleGenerate()} disabled={submitting || !period}>
           {submitting ? "Generating…" : "Generate"}
         </Button>
       </div>
 
       {result?.type === "success" && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+          <p className="text-sm font-medium" style={{ color: "#90B494" }}>
             {result.data.generated === 0
               ? "No new invoices were generated."
               : `Generated ${result.data.generated} invoice${result.data.generated === 1 ? "" : "s"} for ${period}.`}
           </p>
-
           {result.data.invoices.length > 0 && (
-            <ul className="divide-y divide-border rounded-md border border-border text-sm">
+            <ul className="divide-y divide-border rounded-lg border border-border text-sm">
               {result.data.invoices.map((inv: GeneratedInvoice) => (
                 <li key={inv._id} className="flex items-center justify-between px-3 py-2">
-                  <span className="font-medium">
-                    {inv.invoiceNumber ?? inv._id}
-                  </span>
+                  <span className="font-medium">{inv.invoiceNumber ?? inv._id}</span>
                   <div className="flex items-center gap-3 text-muted-foreground">
                     {inv.period && <span>{inv.period}</span>}
-                    <span>
-                      {formatAmount(inv.totalAmount ?? inv.amount)}
-                    </span>
-                    {inv.status && (
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass(inv.status)}`}>
-                        {inv.status}
-                      </span>
-                    )}
+                    <span>{formatAmount(inv.totalAmount ?? inv.amount)}</span>
+                    {inv.status && <StatusBadge status={inv.status} />}
                   </div>
                 </li>
               ))}
             </ul>
           )}
-
           {result.data.errors && result.data.errors.length > 0 && (
-            <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 dark:border-yellow-800 dark:bg-yellow-900/20">
-              <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+            <div
+              style={{
+                background: "rgba(130,93,66,0.08)",
+                border: "1px solid rgba(130,93,66,0.2)",
+                borderRadius: 8,
+                padding: "10px 12px",
+              }}
+            >
+              <p className="text-xs font-semibold mb-1" style={{ color: "#825D42" }}>
                 Skipped ({result.data.errors.length})
               </p>
               <ul className="list-disc list-inside space-y-0.5">
                 {result.data.errors.map((e, i) => (
-                  <li key={i} className="text-xs text-yellow-700 dark:text-yellow-400">
-                    {e}
-                  </li>
+                  <li key={i} className="text-xs text-muted-foreground">{e}</li>
                 ))}
               </ul>
             </div>
           )}
         </div>
       )}
-
       {result?.type === "error" && (
-        <p className="text-sm text-destructive" role="alert">
-          {result.message}
-        </p>
+        <p className="text-sm text-destructive" role="alert">{result.message}</p>
       )}
     </div>
   );
 }
 
-type PaymentRequest = {
-  invoiceId: string;
-  phone: string;
-  status: "idle" | "requesting" | "pending" | "success" | "failed";
-  paymentId: string | null;
-  error: string | null;
-};
-
+/* ── Page ─────────────────────────────────────────────────── */
 export default function InvoicesPage() {
   const api = useInzuApi();
   const { organizationId, isLoaded } = useCurrentOrganizationId();
@@ -193,36 +188,27 @@ export default function InvoicesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
-  const [paymentRequests, setPaymentRequests] = useState<Record<string, PaymentRequest>>({});
 
-  function getPayReq(invoiceId: string): PaymentRequest {
-    return paymentRequests[invoiceId] ?? { invoiceId, phone: "", status: "idle", paymentId: null, error: null };
-  }
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  function updatePayReq(invoiceId: string, patch: Partial<PaymentRequest>) {
-    setPaymentRequests((prev) => ({
-      ...prev,
-      [invoiceId]: { ...getPayReq(invoiceId), ...patch },
-    }));
-  }
+  /* M-Pesa modal state */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeInvoice, setActiveInvoice] = useState<{
+    id: string;
+    number?: string;
+    period?: string;
+    amount?: number;
+  } | null>(null);
 
-  async function handleRequestPayment(invoiceId: string) {
-    const req = getPayReq(invoiceId);
-    if (!req.phone || !/^2547\d{8}$/.test(req.phone.trim())) {
-      updatePayReq(invoiceId, { error: "Enter a valid M-Pesa phone (format 2547XXXXXXXX)." });
-      return;
-    }
-    updatePayReq(invoiceId, { status: "requesting", error: null });
-    try {
-      const res = await api.payments.request({ invoiceId, phoneNumber: req.phone.trim() });
-      const paymentId = res.requests[0]?.paymentId ?? null;
-      updatePayReq(invoiceId, { status: "pending", paymentId });
-    } catch (err) {
-      updatePayReq(invoiceId, {
-        status: "idle",
-        error: err instanceof ApiError ? err.message : "Could not send payment request.",
-      });
-    }
+  function openPaymentModal(item: InvoiceListItem) {
+    setActiveInvoice({
+      id: item._id,
+      number: item.invoiceNumber,
+      period: item.period,
+      amount: item.totalAmount ?? item.amount,
+    });
+    setModalOpen(true);
   }
 
   function fetchInvoices() {
@@ -234,9 +220,7 @@ export default function InvoicesPage() {
       .then((res: InvoiceListItem[] | { invoices?: InvoiceListItem[] }) => {
         setData(Array.isArray(res) ? res : res && Array.isArray(res.invoices) ? res.invoices : []);
       })
-      .catch((err) =>
-        setLoadError(err instanceof ApiError ? err.message : String(err)),
-      )
+      .catch((err) => setLoadError(err instanceof ApiError ? err.message : String(err)))
       .finally(() => setLoading(false));
   }
 
@@ -268,98 +252,137 @@ export default function InvoicesPage() {
           />
         )}
 
-        {loading && <p className="text-muted-foreground">Loading…</p>}
-        {loadError && (
-          <p className="text-destructive" role="alert">
-            {loadError}
-          </p>
+        {loading && <p className="text-muted-foreground text-sm">Loading…</p>}
+        {loadError && <p className="text-destructive text-sm" role="alert">{loadError}</p>}
+
+        {/* Search + status filter */}
+        {data && data.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="search"
+              placeholder="Search invoices…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: "1 1 200px", minWidth: 0, height: 34,
+                borderRadius: 8, border: "1px solid rgba(144,180,148,0.15)",
+                background: "rgba(144,180,148,0.05)", padding: "0 12px",
+                fontSize: 13, outline: "none", color: "inherit",
+              }}
+            />
+            <div className="flex gap-1 flex-wrap">
+              {(["all", "pending", "paid", "overdue"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  style={{
+                    fontSize: 11, fontWeight: 500, letterSpacing: "0.04em",
+                    padding: "4px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                    transition: "background 180ms ease, color 180ms ease",
+                    background: statusFilter === s ? "rgba(144,180,148,0.18)" : "rgba(144,180,148,0.06)",
+                    color: statusFilter === s ? "#90B494" : "rgba(245,247,246,0.45)",
+                  }}
+                >
+                  {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {!loading && !loadError && data && data.length === 0 && (
-          <p className="text-muted-foreground">No invoices yet.</p>
+          <div className="inzu-empty">
+            <p className="text-sm text-muted-foreground">No invoices yet.</p>
+            <button
+              className="text-xs font-medium underline underline-offset-4"
+              style={{ color: "#90B494" }}
+              onClick={() => setShowGenerate(true)}
+            >
+              Generate invoices
+            </button>
+          </div>
         )}
 
-        {!loading && !loadError && data && data.length > 0 && (
-          <ul className="divide-y divide-border rounded-md border border-border">
-            {data.map((item) => {
+        {!loading && !loadError && data && data.length > 0 && (() => {
+          const q = search.toLowerCase();
+          const filtered = data.filter((item) => {
+            const matchesSearch = !q ||
+              (item.invoiceNumber ?? "").toLowerCase().includes(q) ||
+              (item.period ?? "").toLowerCase().includes(q);
+            const matchesStatus = statusFilter === "all" || (item.status ?? "").toLowerCase() === statusFilter;
+            return matchesSearch && matchesStatus;
+          });
+
+          if (filtered.length === 0) {
+            return <p className="text-sm text-muted-foreground">No invoices match your search.</p>;
+          }
+
+          return (
+          <ul className="divide-y divide-border rounded-xl border border-border">
+            {filtered.map((item) => {
               const isPaid = item.status?.toLowerCase() === "paid";
-              const req = getPayReq(item._id);
               return (
-                <li key={item._id} className="px-4 py-3 space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <li
+                  key={item._id}
+                  className="inzu-row flex flex-wrap items-center justify-between gap-2 px-4 py-3.5"
+                >
+                  <div className="flex items-center gap-3">
                     <div>
                       <span className="font-medium text-sm">
                         {item.invoiceNumber ?? item._id}
                       </span>
                       {item.period && (
+                        <span className="ml-2 text-xs text-muted-foreground">{item.period}</span>
+                      )}
+                      {item.dueDate && (
                         <span className="ml-2 text-xs text-muted-foreground">
-                          {item.period}
+                          Due {new Date(item.dueDate).toLocaleDateString()}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span>{formatAmount(item.totalAmount ?? item.amount)}</span>
-                      {item.status && (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass(item.status)}`}>
-                          {item.status}
-                        </span>
-                      )}
-                      {!isPaid && req.status === "idle" && (
-                        <Button size="sm" variant="outline" onClick={() => updatePayReq(item._id, { status: "idle", phone: "" })}>
-                          Request payment
-                        </Button>
                       )}
                     </div>
                   </div>
 
-                  {!isPaid && req.status !== "success" && (
-                    <div className="flex flex-wrap items-end gap-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                          M-Pesa phone (2547…)
-                        </label>
-                        <input
-                          type="tel"
-                          value={req.phone}
-                          onChange={(e) => updatePayReq(item._id, { phone: e.target.value })}
-                          placeholder="2547XXXXXXXX"
-                          className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <span
+                      style={{
+                        fontFeatureSettings: '"tnum"',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        letterSpacing: "-0.01em",
+                      }}
+                      className="text-foreground"
+                    >
+                      KES {formatAmount(item.totalAmount ?? item.amount)}
+                    </span>
+                    <StatusBadge status={item.status} />
+                    {!isPaid && (
                       <Button
                         size="sm"
-                        disabled={req.status === "requesting" || req.status === "pending"}
-                        onClick={() => void handleRequestPayment(item._id)}
+                        variant="outline"
+                        onClick={() => openPaymentModal(item)}
+                        style={{ fontSize: 12 }}
                       >
-                        {req.status === "requesting" ? "Sending…" : req.status === "pending" ? "Waiting…" : "Send STK push"}
+                        Request payment
                       </Button>
-                    </div>
-                  )}
-
-                  {req.error && (
-                    <p className="text-xs text-destructive">{req.error}</p>
-                  )}
-
-                  {req.paymentId && req.status === "pending" && (
-                    <PaymentStatus
-                      paymentId={req.paymentId}
-                      onConfirmed={() => {
-                        updatePayReq(item._id, { status: "success" });
-                        fetchInvoices();
-                      }}
-                      onFailed={() => updatePayReq(item._id, { status: "failed", error: "Payment failed. You can try again." })}
-                    />
-                  )}
-
-                  {req.status === "success" && (
-                    <p className="text-xs font-medium text-emerald-700">Payment confirmed.</p>
-                  )}
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
-        )}
+          );
+        })()}
       </Container>
+
+      <MpesaPaymentModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        invoice={activeInvoice}
+        onPaymentConfirmed={() => {
+          setModalOpen(false);
+          fetchInvoices();
+        }}
+      />
     </RequireOrganization>
   );
 }
