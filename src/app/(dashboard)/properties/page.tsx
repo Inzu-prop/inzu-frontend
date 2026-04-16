@@ -128,8 +128,8 @@ export default function PropertiesPage() {
                 minWidth: 0,
                 height: 34,
                 borderRadius: 8,
-                border: "1px solid rgba(144,180,148,0.15)",
-                background: "rgba(144,180,148,0.05)",
+                border: "1px solid hsl(var(--border))",
+                background: "hsl(var(--background))",
                 padding: "0 12px",
                 fontSize: 13,
                 outline: "none",
@@ -147,11 +147,11 @@ export default function PropertiesPage() {
                     letterSpacing: "0.04em",
                     padding: "4px 10px",
                     borderRadius: 20,
-                    border: "none",
                     cursor: "pointer",
-                    transition: "background 180ms ease, color 180ms ease",
-                    background: statusFilter === opt.value ? "rgba(144,180,148,0.18)" : "rgba(144,180,148,0.06)",
-                    color: statusFilter === opt.value ? "#90B494" : "rgba(245,247,246,0.45)",
+                    transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                    background: statusFilter === opt.value ? "rgba(144,180,148,0.15)" : "transparent",
+                    color: statusFilter === opt.value ? "#90B494" : "hsl(var(--muted-foreground))",
+                    border: statusFilter === opt.value ? "1px solid rgba(144,180,148,0.3)" : "1px solid hsl(var(--border))",
                   }}
                 >
                   {opt.label}

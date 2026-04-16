@@ -213,8 +213,8 @@ export default function TenantsPage() {
               onChange={(e) => setSearch(e.target.value)}
               style={{
                 flex: "1 1 200px", minWidth: 0, height: 34,
-                borderRadius: 8, border: "1px solid rgba(144,180,148,0.15)",
-                background: "rgba(144,180,148,0.05)", padding: "0 12px",
+                borderRadius: 8, border: "1px solid hsl(var(--border))",
+                background: "hsl(var(--background))", padding: "0 12px",
                 fontSize: 13, outline: "none", color: "inherit",
               }}
             />
@@ -225,10 +225,11 @@ export default function TenantsPage() {
                   onClick={() => setStatusFilter(s)}
                   style={{
                     fontSize: 11, fontWeight: 500, letterSpacing: "0.04em",
-                    padding: "4px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                    padding: "4px 10px", borderRadius: 20, cursor: "pointer",
                     transition: "background 180ms ease, color 180ms ease",
-                    background: statusFilter === s ? "rgba(144,180,148,0.18)" : "rgba(144,180,148,0.06)",
-                    color: statusFilter === s ? "#90B494" : "rgba(245,247,246,0.45)",
+                    background: statusFilter === s ? "rgba(144,180,148,0.15)" : "transparent",
+                    color: statusFilter === s ? "#90B494" : "hsl(var(--muted-foreground))",
+                    border: statusFilter === s ? "1px solid rgba(144,180,148,0.3)" : "1px solid hsl(var(--border))",
                   }}
                 >
                   {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
