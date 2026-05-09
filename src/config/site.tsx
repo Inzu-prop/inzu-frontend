@@ -4,7 +4,6 @@ import {
   FileText,
   Gauge,
   type LucideIcon,
-  LayoutGrid,
   Banknote,
   Users,
   Wrench,
@@ -26,7 +25,6 @@ export const siteConfig = {
 export const navigations: Navigation[] = [
   { icon: Gauge, name: "Dashboard", href: "/" },
   { icon: Building2, name: "Properties", href: "/properties" },
-  { icon: LayoutGrid, name: "Units", href: "/units" },
   { icon: Users, name: "Tenants", href: "/tenants" },
   { icon: FileText, name: "Invoices", href: "/invoices" },
   { icon: Banknote, name: "Payments", href: "/payments" },

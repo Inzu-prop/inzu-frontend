@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
@@ -43,6 +43,20 @@ const inputCls =
 
 type AddMode = "bulk" | "single" | null;
 
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-base font-semibold">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function PropertyUnitsPage() {
   const params = useParams();
   const { organizationId } = useCurrentOrganizationId();
@@ -80,21 +94,21 @@ export default function PropertyUnitsPage() {
   const [addMode, setAddMode] = useState<AddMode>(null);
   const [bulkSuccess, setBulkSuccess] = useState<string[] | null>(null);
 
-  // Bulk form
+  // Bulk-add form
   const [bulkCount, setBulkCount] = useState("10");
   const [bulkPrefix, setBulkPrefix] = useState("");
   const [bulkStart, setBulkStart] = useState("1");
   const [bulkType, setBulkType] = useState<UnitType | "">("");
-  const [bulkRent, setBulkRent] = useState("");
-  const [bulkDeposit, setBulkDeposit] = useState("");
+  const [bulkAddRent, setBulkAddRent] = useState("");
+  const [bulkAddDeposit, setBulkAddDeposit] = useState("");
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
-  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkAddError, setBulkAddError] = useState<string | null>(null);
 
   const handleBulkSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setBulkError(null);
+    setBulkAddError(null);
     const count = parseInt(bulkCount, 10);
-    if (count < 1 || count > 500) { setBulkError("Count must be 1–500."); return; }
+    if (count < 1 || count > 500) { setBulkAddError("Count must be 1–500."); return; }
     setBulkSubmitting(true);
     api.units
       .createBulk(propertyId, {
@@ -102,15 +116,15 @@ export default function PropertyUnitsPage() {
         ...(bulkPrefix.trim() && { unitNumberPrefix: bulkPrefix.trim() }),
         ...(bulkStart.trim() && { unitNumberStart: parseInt(bulkStart, 10) }),
         ...(bulkType && { defaultType: bulkType }),
-        ...(bulkRent.trim() !== "" && { defaultRent: parseFloat(bulkRent) || 0 }),
-        ...(bulkDeposit.trim() !== "" && { defaultDeposit: parseFloat(bulkDeposit) }),
+        ...(bulkAddRent.trim() !== "" && { defaultRent: parseFloat(bulkAddRent) || 0 }),
+        ...(bulkAddDeposit.trim() !== "" && { defaultDeposit: parseFloat(bulkAddDeposit) }),
       })
       .then((res) => {
         setBulkSuccess(res.unitNumbers ?? []);
         setAddMode(null);
         fetchUnits();
       })
-      .catch((err) => setBulkError(err instanceof ApiError ? err.message : String(err)))
+      .catch((err) => setBulkAddError(err instanceof ApiError ? err.message : String(err)))
       .finally(() => setBulkSubmitting(false));
   };
 
@@ -143,17 +157,39 @@ export default function PropertyUnitsPage() {
       .finally(() => setSingleSubmitting(false));
   };
 
-  // Edit / delete
+  // Single-row edit / delete
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRent, setEditRent] = useState("");
   const [editType, setEditType] = useState<UnitType | "">("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const allIds = units?.map((u) => u._id) ?? [];
+  const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const someSelected = selected.size > 0 && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(allIds));
+  };
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleEdit = (u: Unit) => {
     setEditingId(u._id);
     setEditRent(u.rentAmount != null ? String(u.rentAmount) : "");
     setEditType((u.type as UnitType) ?? "");
+    setSelected(new Set());
   };
 
   const handleEditSubmit = (e: React.FormEvent, unitId: string) => {
@@ -171,6 +207,82 @@ export default function PropertyUnitsPage() {
     if (!confirm("Delete this unit? This cannot be undone.")) return;
     setDeletingId(unitId);
     api.units.delete(unitId).then(() => fetchUnits()).finally(() => setDeletingId(null));
+  };
+
+  // Bulk edit rent modal
+  const [showEditRentModal, setShowEditRentModal] = useState(false);
+  const [bulkRent, setBulkRent] = useState("");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkResult, setBulkResult] = useState<string | null>(null);
+  const rentInputRef = useRef<HTMLInputElement>(null);
+
+  const openEditRentModal = () => {
+    setBulkRent("");
+    setBulkResult(null);
+    setShowEditRentModal(true);
+    setTimeout(() => rentInputRef.current?.focus(), 50);
+  };
+
+  const handleBulkEditRent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const rent = parseFloat(bulkRent);
+    if (isNaN(rent) || rent < 0) return;
+    setBulkUpdating(true);
+    const idsSnapshot = Array.from(selected);
+    try {
+      const payload = idsSnapshot.map((unitId) => ({ unitId, rentAmount: rent }));
+      const res = await api.units.bulkUpdate({ units: payload });
+      const failCount = res.failed?.length ?? 0;
+      const successCount = res.updated?.length ?? 0;
+      if (failCount > 0) {
+        const failedLabels = res.failed
+          .map((f) => {
+            const unit = units?.find((u) => u._id === f.unitId);
+            return unit?.unitNumber ?? f.unitId;
+          })
+          .join(", ");
+        setBulkResult(`${successCount} updated, ${failCount} failed: ${failedLabels}`);
+      } else {
+        setShowEditRentModal(false);
+        setSelected(new Set());
+        fetchUnits();
+      }
+    } catch (err) {
+      setBulkResult(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteResult, setBulkDeleteResult] = useState<string | null>(null);
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const idsSnapshot = Array.from(selected);
+    try {
+      const res = await api.units.bulkDelete({ unitIds: idsSnapshot });
+      const failCount = res.failed?.length ?? 0;
+      if (failCount > 0) {
+        const failedLabels = res.failed
+          .map((f) => {
+            const unit = units?.find((u) => u._id === f.unitId);
+            return unit?.unitNumber ?? f.unitId;
+          })
+          .join(", ");
+        setBulkDeleteResult(`${res.deleted} deleted, ${failCount} failed: ${failedLabels}`);
+      } else {
+        setShowDeleteModal(false);
+        setSelected(new Set());
+        fetchUnits();
+      }
+    } catch (err) {
+      setBulkDeleteResult(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const occupied = units?.filter((u) => u.status === "occupied").length ?? 0;
@@ -270,16 +382,16 @@ export default function PropertyUnitsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="bulk-rent" className="mb-1 block text-sm font-medium">Default rent</label>
-                <input id="bulk-rent" type="number" min={0} step="any" value={bulkRent}
-                  onChange={(e) => setBulkRent(e.target.value)} className={inputCls} placeholder="0" />
+                <input id="bulk-rent" type="number" min={0} step="any" value={bulkAddRent}
+                  onChange={(e) => setBulkAddRent(e.target.value)} className={inputCls} placeholder="0" />
               </div>
               <div>
                 <label htmlFor="bulk-deposit" className="mb-1 block text-sm font-medium">Default deposit</label>
-                <input id="bulk-deposit" type="number" min={0} step="any" value={bulkDeposit}
-                  onChange={(e) => setBulkDeposit(e.target.value)} className={inputCls} placeholder="0" />
+                <input id="bulk-deposit" type="number" min={0} step="any" value={bulkAddDeposit}
+                  onChange={(e) => setBulkAddDeposit(e.target.value)} className={inputCls} placeholder="0" />
               </div>
             </div>
-            {bulkError && <p className="text-sm text-destructive" role="alert">{bulkError}</p>}
+            {bulkAddError && <p className="text-sm text-destructive" role="alert">{bulkAddError}</p>}
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={bulkSubmitting}>
                 {bulkSubmitting ? "Creating…" : "Create units"}
@@ -332,6 +444,29 @@ export default function PropertyUnitsPage() {
           </form>
         )}
 
+        {/* Bulk-action toolbar */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-4 py-2.5">
+            <span className="text-sm font-medium">{selected.size} selected</span>
+            <div className="ml-auto flex gap-2">
+              <Button size="sm" variant="outline" onClick={openEditRentModal}>
+                Edit Rent
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:text-destructive border-destructive/40"
+                onClick={() => { setBulkDeleteResult(null); setShowDeleteModal(true); }}
+              >
+                Delete
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
         {loading && (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
@@ -353,6 +488,16 @@ export default function PropertyUnitsPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
+                  <th className="w-10 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleAll}
+                      aria-label="Select all units"
+                      className="h-4 w-4 cursor-pointer rounded border-input accent-[#32533D]"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Unit</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">Rent</th>
@@ -363,42 +508,61 @@ export default function PropertyUnitsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {units.map((u) => (
-                  <tr key={u._id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={u._id}
+                    className={`hover:bg-muted/30 transition-colors ${selected.has(u._id) ? "bg-[#32533D]/5" : ""}`}
+                  >
                     {editingId === u._id ? (
-                      <td colSpan={6} className="px-4 py-2">
-                        <form
-                          onSubmit={(e) => handleEditSubmit(e, u._id)}
-                          className="flex flex-wrap items-center gap-2"
-                        >
-                          <span className="font-medium w-16">{u.unitNumber}</span>
-                          <select
-                            value={editType}
-                            onChange={(e) => setEditType((e.target.value || "") as UnitType | "")}
-                            className={inputCls}
-                            style={{ width: 150 }}
+                      <>
+                        <td className="px-3 py-2" />
+                        <td colSpan={6} className="px-4 py-2">
+                          <form
+                            onSubmit={(e) => handleEditSubmit(e, u._id)}
+                            className="flex flex-wrap items-center gap-2"
                           >
-                            <option value="">— Type —</option>
-                            {UNIT_TYPES.map((t) => (
-                              <option key={t} value={t}>{UNIT_TYPE_LABELS[t]}</option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            min={0}
-                            step="any"
-                            value={editRent}
-                            onChange={(e) => setEditRent(e.target.value)}
-                            className={inputCls}
-                            placeholder="Rent"
-                            style={{ width: 100 }}
-                          />
-                          <Button type="submit" size="sm" disabled={editSubmitting}>Save</Button>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
-                        </form>
-                      </td>
+                            <span className="font-medium w-16">{u.unitNumber}</span>
+                            <select
+                              value={editType}
+                              onChange={(e) => setEditType((e.target.value || "") as UnitType | "")}
+                              className={inputCls}
+                              style={{ width: 150 }}
+                            >
+                              <option value="">— Type —</option>
+                              {UNIT_TYPES.map((t) => (
+                                <option key={t} value={t}>{UNIT_TYPE_LABELS[t]}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={editRent}
+                              onChange={(e) => setEditRent(e.target.value)}
+                              className={inputCls}
+                              placeholder="Rent"
+                              style={{ width: 100 }}
+                            />
+                            <Button type="submit" size="sm" disabled={editSubmitting}>Save</Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
+                          </form>
+                        </td>
+                      </>
                     ) : (
                       <>
-                        <td className="px-4 py-3 font-medium">{u.unitNumber}</td>
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(u._id)}
+                            onChange={() => toggleOne(u._id)}
+                            aria-label={`Select unit ${u.unitNumber}`}
+                            className="h-4 w-4 cursor-pointer rounded border-input accent-[#32533D]"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/units/${u._id}`} className="font-medium text-primary hover:underline">
+                            {u.unitNumber}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {u.type ? (UNIT_TYPE_LABELS[u.type as UnitType] ?? u.type) : "—"}
                         </td>
@@ -440,6 +604,65 @@ export default function PropertyUnitsPage() {
           </div>
         )}
       </Container>
+
+      {/* Edit Rent Modal */}
+      {showEditRentModal && (
+        <Modal title={`Set rent for ${selected.size} unit${selected.size === 1 ? "" : "s"}`} onClose={() => setShowEditRentModal(false)}>
+          <form onSubmit={handleBulkEditRent} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm text-muted-foreground">New rent amount (KES)</label>
+              <input
+                ref={rentInputRef}
+                type="number"
+                min={0}
+                step="any"
+                value={bulkRent}
+                onChange={(e) => setBulkRent(e.target.value)}
+                className={inputCls}
+                placeholder="e.g. 15000"
+                required
+              />
+            </div>
+            {bulkResult && (
+              <p className="text-sm text-destructive">{bulkResult}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowEditRentModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={bulkUpdating || !bulkRent}>
+                {bulkUpdating ? "Saving…" : "Apply"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <Modal title="Delete units?" onClose={() => setShowDeleteModal(false)}>
+          <p className="mb-4 text-sm text-muted-foreground">
+            You are about to delete <strong>{selected.size} unit{selected.size === 1 ? "" : "s"}</strong>. This cannot be undone.
+          </p>
+          {bulkDeleteResult && (
+            <p className="mb-4 text-sm text-destructive">{bulkDeleteResult}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={bulkDeleting}
+              onClick={handleBulkDelete}
+            >
+              {bulkDeleting ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </RequireOrganization>
   );
 }

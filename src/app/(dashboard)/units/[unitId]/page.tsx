@@ -59,13 +59,10 @@ export default function UnitDetailPage() {
       <Container className="py-6 space-y-6">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/units">← Units</Link>
+            <Link href={unit?.propertyId ? `/properties/${unit.propertyId}/units` : "/properties"}>
+              ← {unit?.propertyId ? "Property units" : "Properties"}
+            </Link>
           </Button>
-          {unit?.propertyId && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`/properties/${unit.propertyId}/units`}>← Property units</Link>
-            </Button>
-          )}
         </div>
 
         {loading && (
