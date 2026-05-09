@@ -259,7 +259,13 @@ export default function TenantDetailPage() {
         const propertyId = t.propertyId as string | undefined;
         await Promise.all([
           unitId
-            ? api.units.get(unitId).then((u) => setUnit(u)).catch(() => {})
+            ? api.units
+                .get(unitId)
+                .then((u) => {
+                  const withUnit = u as { unit?: Unit };
+                  setUnit(withUnit.unit ?? (u as Unit));
+                })
+                .catch(() => {})
             : Promise.resolve(),
           propertyId
             ? api.properties
