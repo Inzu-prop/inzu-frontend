@@ -50,7 +50,7 @@ export default function Navigation({ onNavigate, expanded = true }: NavigationPr
               <Icon size={17} strokeWidth={1.8} />
             </span>
 
-            {/* Label */}
+            {/* Label — fades in after width expands; fades out immediately on collapse */}
             <span
               style={{
                 color: isActive ? "#F5F7F6" : "rgba(245,247,246,0.65)",
@@ -58,7 +58,9 @@ export default function Navigation({ onNavigate, expanded = true }: NavigationPr
                 fontWeight: isActive ? 500 : 400,
                 letterSpacing: "0.01em",
                 opacity: expanded ? 1 : 0,
-                transition: "opacity 0.18s ease 0.12s",
+                transition: expanded
+                  ? "opacity 180ms ease 140ms"
+                  : "opacity 120ms ease",
                 overflow: "hidden",
                 flex: 1,
               }}

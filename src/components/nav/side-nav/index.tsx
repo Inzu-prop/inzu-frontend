@@ -35,16 +35,28 @@ export default function SideNav() {
           border: "1px solid rgba(144, 180, 148, 0.15)",
           borderRadius: "0 16px 16px 0",
           willChange: "width",
+          contain: "layout paint",
         }}
         className={cn(
-          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] shrink-0 flex-col overflow-x-hidden",
-          "transition-[width,transform] duration-[400ms] ease-luxury",
+          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] shrink-0 overflow-x-hidden",
+          "transition-[width,transform] duration-[280ms] ease-luxury",
           // Mobile: slide in/out at full width
           mobileOpen ? "translate-x-0 w-[200px]" : "-translate-x-full laptop:translate-x-0",
           // Desktop: collapsed (w-16) or expanded on hover (w-[200px])
           !mobileOpen && (desktopExpanded ? "laptop:w-[200px]" : "laptop:w-16"),
         )}
       >
+        {/* Fixed-width inner shell — children never reflow during width animation */}
+        <div
+          style={{
+            width: 200,
+            minWidth: 200,
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+          }}
+        >
         <User expanded={desktopExpanded} mobileOpen={mobileOpen} />
         <Navigation
           onNavigate={() => setMobileOpen(false)}
@@ -101,11 +113,13 @@ export default function SideNav() {
               >
                 {(organization.name ?? "O").slice(0, 2).toUpperCase()}
               </div>
-              {/* Org name — fades in on expand */}
+              {/* Org name — fades in after width expands; fades out immediately on collapse */}
               <div
                 style={{
                   opacity: desktopExpanded || mobileOpen ? 1 : 0,
-                  transition: "opacity 0.18s ease 0.12s",
+                  transition: (desktopExpanded || mobileOpen)
+                    ? "opacity 180ms ease 140ms"
+                    : "opacity 120ms ease",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   minWidth: 0,
@@ -137,6 +151,7 @@ export default function SideNav() {
               </div>
             </button>
           )}
+        </div>
         </div>
       </aside>
     </>

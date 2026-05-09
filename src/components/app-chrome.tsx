@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useOrganization } from "@clerk/nextjs";
 import { SideNav } from "@/components/nav";
+import { CommandPalette } from "@/components/command-palette";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 
@@ -34,6 +35,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-[100dvh] w-full bg-background">
+      <CommandPalette />
       <SideNav />
       <div
         className="flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden overflow-y-auto laptop:ml-16"
