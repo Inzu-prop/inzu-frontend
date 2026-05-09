@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Mail, Phone, Building2, Home, FileText, Calendar, AlertTriangle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
@@ -22,6 +23,43 @@ function formatAmount(amount?: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+}
+
+function formatCurrencyKES(n?: number) {
+  if (n == null) return "—";
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(n);
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function getInitials(first?: string, last?: string, fallback?: string) {
+  const a = first?.trim()?.[0];
+  const b = last?.trim()?.[0];
+  if (a || b) return `${a ?? ""}${b ?? ""}`.toUpperCase();
+  return fallback?.trim()?.[0]?.toUpperCase() ?? "T";
+}
+
+function StatusChip({ status }: { status?: string }) {
+  const s = status?.toLowerCase();
+  let bg = "rgba(144,180,148,0.07)";
+  let color = "rgba(120,120,120,0.6)";
+  if (s === "active") { bg = "rgba(50,83,61,0.12)"; color = "#32533D"; }
+  else if (s === "blacklisted") { bg = "rgba(226,32,38,0.10)"; color = "#E22026"; }
+  else if (s === "inactive") { bg = "rgba(120,120,120,0.10)"; color = "rgba(120,120,120,0.7)"; }
+  else if (s === "prospective") { bg = "rgba(130,93,66,0.10)"; color = "#825D42"; }
+  return (
+    <span
+      style={{ background: bg, color }}
+      className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider"
+    >
+      {status ?? "Unknown"}
+    </span>
+  );
 }
 
 type GenerateResult =
@@ -151,6 +189,19 @@ function GenerateInvoicePanel({
   );
 }
 
+type EmergencyContact = {
+  name?: string;
+  relationship?: string;
+  phoneNumber?: string;
+  email?: string;
+};
+
+type TenantDocument = {
+  url?: string;
+  name?: string;
+  type?: string;
+};
+
 type TenantDetails = {
   _id?: string;
   firstName?: string;
@@ -161,6 +212,14 @@ type TenantDetails = {
   unitId?: string;
   propertyId?: string;
   monthlyRent?: number;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  emergencyContacts?: EmergencyContact[];
+  documents?: TenantDocument[];
+  idDocumentUrl?: string | null;
+  employmentDocumentUrl?: string | null;
+  clerkUserId?: string;
   [key: string]: unknown;
 };
 
@@ -172,6 +231,7 @@ export default function TenantDetailPage() {
 
   const [tenant, setTenant] = useState<TenantDetails | null>(null);
   const [unit, setUnit] = useState<Unit | null>(null);
+  const [propertyName, setPropertyName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showGenerateInvoice, setShowGenerateInvoice] = useState(false);
@@ -196,20 +256,27 @@ export default function TenantDetailPage() {
         setTenant(t);
 
         const unitId = (t.unitId ?? raw?.unitId) as string | undefined;
-        if (unitId) {
-          try {
-            const fetchedUnit = await api.units.get(unitId);
-            setUnit(fetchedUnit);
-          } catch {
-            // ignore unit fetch errors; tenant details still useful
-          }
-        }
+        const propertyId = t.propertyId as string | undefined;
+        await Promise.all([
+          unitId
+            ? api.units.get(unitId).then((u) => setUnit(u)).catch(() => {})
+            : Promise.resolve(),
+          propertyId
+            ? api.properties
+                .get(propertyId)
+                .then((res) => {
+                  const prop = (res as { property?: { name?: string } })?.property;
+                  setPropertyName(prop?.name ?? null);
+                })
+                .catch(() => {})
+            : Promise.resolve(),
+        ]);
       })
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : String(err)),
       )
       .finally(() => setLoading(false));
-  }, [api.tenants, api.units, organizationId, tenantId]);
+  }, [api.tenants, api.units, api.properties, organizationId, tenantId]);
 
   const displayName = (() => {
     const fromTenant =
@@ -217,6 +284,15 @@ export default function TenantDetailPage() {
       [tenant?.firstName, tenant?.lastName].filter(Boolean).join(" ");
     return fromTenant || "Tenant";
   })();
+
+  const memberSince = formatDate(tenant?.createdAt);
+  const emergencyContacts = (tenant?.emergencyContacts ?? []).filter((c) => c && (c.name || c.phoneNumber || c.email));
+  const documents: { label: string; url: string }[] = [];
+  if (tenant?.idDocumentUrl) documents.push({ label: "ID Document", url: tenant.idDocumentUrl });
+  if (tenant?.employmentDocumentUrl) documents.push({ label: "Employment Document", url: tenant.employmentDocumentUrl });
+  (tenant?.documents ?? []).forEach((d, i) => {
+    if (d?.url) documents.push({ label: d.name ?? d.type ?? `Document ${i + 1}`, url: d.url });
+  });
 
   return (
     <RequireOrganization>
@@ -236,70 +312,64 @@ export default function TenantDetailPage() {
 
         {!loading && !error && tenant && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  {displayName}
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  ID: {tenant._id ?? tenantId}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1 text-sm">
-                {tenant.email && (
-                  <span className="text-muted-foreground">
-                    Email: {tenant.email}
-                  </span>
-                )}
-                {tenant.phoneNumber && (
-                  <span className="text-muted-foreground">
-                    Phone: {tenant.phoneNumber}
-                  </span>
-                )}
-                {tenant.monthlyRent != null && (
-                  <span className="text-muted-foreground">
-                    Monthly rent: {Number(tenant.monthlyRent)}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Tenancy
-                </h2>
-                <dl className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] gap-x-3 gap-y-1 text-sm">
-                  <dt className="text-muted-foreground">Unit</dt>
-                  <dd>
-                    {unit ? (
-                      <>
-                        <span>Unit {unit.unitNumber}</span>
-                        {unit.status && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            ({unit.status})
-                          </span>
-                        )}
-                      </>
-                    ) : tenant?.unitId ? (
-                      tenant.unitId
-                    ) : (
-                      "Unassigned"
+            {/* Header card */}
+            <div className="rounded-lg border border-border bg-card p-6">
+              <div className="flex flex-wrap items-start gap-5">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#32533D]/10 text-lg font-semibold text-[#32533D] dark:bg-[#90B494]/15 dark:text-[#90B494]">
+                  {getInitials(tenant.firstName, tenant.lastName, displayName)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-2xl font-semibold tracking-tight">{displayName}</h1>
+                    <StatusChip status={tenant.status} />
+                  </div>
+                  {memberSince && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Member since {memberSince}
+                    </p>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                    {tenant.email && (
+                      <a
+                        href={`mailto:${tenant.email}`}
+                        className="flex items-center gap-2 text-foreground hover:text-primary"
+                      >
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        {tenant.email}
+                      </a>
                     )}
-                  </dd>
-                  <dt className="text-muted-foreground">Property</dt>
-                  <dd>{tenant.propertyId ?? "—"}</dd>
-                </dl>
-              </section>
+                    {tenant.phoneNumber && (
+                      <a
+                        href={`tel:${tenant.phoneNumber}`}
+                        className="flex items-center gap-2 text-foreground hover:text-primary"
+                      >
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        {tenant.phoneNumber}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Raw data
-                </h2>
-                <pre className="overflow-auto rounded bg-background/60 p-3 text-xs text-muted-foreground">
-                  {JSON.stringify(tenant, null, 2)}
-                </pre>
-              </section>
+              {/* Action buttons */}
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
+                {!showGenerateInvoice && (
+                  <Button size="sm" onClick={() => setShowGenerateInvoice(true)}>
+                    Generate invoice
+                  </Button>
+                )}
+                {unit?.propertyId && (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/properties/${unit.propertyId}`}>View property</Link>
+                  </Button>
+                )}
+                {unit && (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/units/${unit._id}`}>View unit</Link>
+                  </Button>
+                )}
+              </div>
             </div>
 
             {showGenerateInvoice && (
@@ -309,32 +379,141 @@ export default function TenantDetailPage() {
               />
             )}
 
-            <div className="flex flex-wrap gap-2">
-              {!showGenerateInvoice && (
-                <Button size="sm" onClick={() => setShowGenerateInvoice(true)}>
-                  Generate invoice
-                </Button>
-              )}
-              {unit?.propertyId && (
-                <>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/properties/${unit.propertyId}`}>
-                      View property
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/properties/${unit.propertyId}/units`}>
-                      View property units
-                    </Link>
-                  </Button>
-                </>
-              )}
-              {unit && (
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/units/${unit._id}`}>View unit</Link>
-                </Button>
-              )}
+            {/* Tenancy + Rent */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <section className="rounded-lg border border-border bg-card p-5 md:col-span-2">
+                <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tenancy
+                </h2>
+                <dl className="grid grid-cols-1 gap-y-3 sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Property</dt>
+                      <dd className="mt-0.5 truncate text-sm">
+                        {tenant.propertyId ? (
+                          <Link
+                            href={`/properties/${tenant.propertyId}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {propertyName ?? "View property"}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Home className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Unit</dt>
+                      <dd className="mt-0.5 text-sm">
+                        {unit ? (
+                          <>
+                            <Link
+                              href={`/units/${unit._id}`}
+                              className="font-medium text-primary hover:underline"
+                            >
+                              Unit {unit.unitNumber}
+                            </Link>
+                            {unit.status && (
+                              <span className="ml-2 text-xs text-muted-foreground">({unit.status})</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="rounded-lg border border-border bg-card p-5">
+                <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Monthly rent
+                </h2>
+                <p className="text-2xl font-semibold tracking-tight">
+                  {formatCurrencyKES(tenant.monthlyRent != null ? Number(tenant.monthlyRent) : undefined)}
+                </p>
+                {tenant.monthlyRent == null && (
+                  <p className="mt-1 text-xs text-muted-foreground">No rent set</p>
+                )}
+              </section>
             </div>
+
+            {/* Documents */}
+            <section className="rounded-lg border border-border bg-card p-5">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Documents
+              </h2>
+              {documents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No documents uploaded.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {documents.map((doc, i) => (
+                    <li key={i} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-sm">{doc.label}</span>
+                      </div>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        View
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Emergency contacts */}
+            <section className="rounded-lg border border-border bg-card p-5">
+              <h2 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Emergency contacts
+              </h2>
+              {emergencyContacts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No emergency contacts on file.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {emergencyContacts.map((c, i) => (
+                    <li key={i} className="rounded-md border border-border bg-muted/30 p-3">
+                      <div className="flex flex-wrap items-baseline gap-x-3">
+                        <span className="font-medium">{c.name ?? "Contact"}</span>
+                        {c.relationship && (
+                          <span className="text-xs text-muted-foreground">{c.relationship}</span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        {c.phoneNumber && (
+                          <a href={`tel:${c.phoneNumber}`} className="flex items-center gap-1.5 text-muted-foreground hover:text-primary">
+                            <Phone className="h-3.5 w-3.5" />
+                            {c.phoneNumber}
+                          </a>
+                        )}
+                        {c.email && (
+                          <a href={`mailto:${c.email}`} className="flex items-center gap-1.5 text-muted-foreground hover:text-primary">
+                            <Mail className="h-3.5 w-3.5" />
+                            {c.email}
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <p className="text-xs text-muted-foreground">
+              Tenant ID: <span className="font-mono">{tenant._id ?? tenantId}</span>
+            </p>
           </>
         )}
       </Container>
