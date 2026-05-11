@@ -151,6 +151,26 @@ export type InzuApiDeps = {
   getOrganizationId: () => string | null;
 };
 
+function extractErrorMessage(body: string, status: number): string {
+  const fallback = `API error ${status}`;
+  if (!body) return fallback;
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      for (const key of ["error", "message", "detail"]) {
+        const value = obj[key];
+        if (typeof value === "string" && value.trim()) return value;
+      }
+    }
+    if (typeof parsed === "string" && parsed.trim()) return parsed;
+  } catch {
+    const trimmed = body.trim();
+    if (trimmed && trimmed.length < 300) return trimmed;
+  }
+  return fallback;
+}
+
 function buildUrl(
   baseUrl: string,
   path: string,
@@ -205,7 +225,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new ApiError(res.status, `API error ${res.status}`, text);
+      throw new ApiError(res.status, extractErrorMessage(text, res.status), text);
     }
     if (res.status === 204) {
       return undefined as T;
