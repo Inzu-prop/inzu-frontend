@@ -24,6 +24,24 @@ import type {
 } from "./invoices";
 import { ApiError } from "./errors";
 
+export type PaymentListItem = {
+  _id: string;
+  paymentNumber?: string;
+  amount?: number;
+  method?: string;
+  status?: string;
+  period?: string;
+  transactionDate?: string;
+  mpesaReceiptNumber?: string;
+  reconciled?: boolean;
+  tenantId?: string;
+};
+
+export type PaymentsListResponse = {
+  payments: PaymentListItem[];
+  total: number;
+};
+
 export type SendPortalInviteResponse = {
   success: true;
   message: string;
@@ -362,7 +380,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     payments: {
       list: (params?: Record<string, string>) =>
-        request<unknown>("GET", "organizations/:organizationId/payments", { params }),
+        request<PaymentsListResponse>("GET", "organizations/:organizationId/payments", { params }),
       request: (body: { invoiceId: string; phoneNumber?: string }) =>
         request<{ requests: { paymentId: string; customerMessage: string; amount: number }[] }>(
           "POST",

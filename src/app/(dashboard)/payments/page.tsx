@@ -5,11 +5,27 @@ import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
 import { useInzuApi } from "@/hooks/use-inzu-api";
-import { ApiError } from "@/lib/api";
+import { ApiError, type PaymentListItem } from "@/lib/api";
+
+function formatAmount(amount?: number): string {
+  if (amount == null) return "—";
+  return new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: "KES",
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatDate(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
 
 export default function PaymentsPage() {
   const api = useInzuApi();
-  const [data, setData] = useState<unknown[] | null>(null);
+  const [data, setData] = useState<PaymentListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +36,7 @@ export default function PaymentsPage() {
     api.payments
       .list()
       .then((res) => {
-        if (!cancelled) setData(Array.isArray(res) ? res : []);
+        if (!cancelled) setData(res.payments ?? []);
       })
       .catch((err) => {
         if (!cancelled)
@@ -52,22 +68,31 @@ export default function PaymentsPage() {
         )}
         {!loading && !error && data && data.length > 0 && (
           <ul className="divide-y divide-border rounded-md border border-border">
-            {((data as { id?: string; amount?: number; status?: string }[]) || []).map(
-              (item) => (
-                <li
-                  key={item.id ?? String(item)}
-                  className="flex items-center justify-between px-4 py-3"
-                >
+            {data.map((item) => (
+              <li
+                key={item._id}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <div className="flex flex-col gap-0.5">
                   <span className="font-medium">
-                    Payment {item.id ?? "—"}
+                    {item.paymentNumber ?? item._id}
                   </span>
-                  <span className="text-muted-foreground">
-                    {item.amount != null ? String(item.amount) : ""}
-                    {item.status ? ` · ${item.status}` : ""}
+                  <span className="text-xs text-muted-foreground">
+                    {[item.method, formatDate(item.transactionDate), item.period]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
-                </li>
-              ),
-            )}
+                </div>
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="font-medium">{formatAmount(item.amount)}</span>
+                  {item.status && (
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                      {item.status}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </Container>
