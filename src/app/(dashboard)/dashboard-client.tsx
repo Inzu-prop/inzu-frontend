@@ -96,16 +96,33 @@ export default function DashboardClient() {
     const toMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const fromMonth = `${from.getUTCFullYear()}-${String(from.getUTCMonth() + 1).padStart(2, "0")}`;
 
+    console.log("[Dashboard] fetching for org:", organizationId, { fromMonth, toMonth });
+
     Promise.all([
       api.dashboard
         .getSummary()
-        .then((res) => (!cancelled ? setSummary(res as SummaryResponse) : undefined)),
+        .then((res) => {
+          console.log("[Dashboard] /dashboard/summary response:", res);
+          if (!cancelled) setSummary(res as SummaryResponse);
+        })
+        .catch((err) => {
+          console.error("[Dashboard] /dashboard/summary error:", err);
+          throw err;
+        }),
       api.dashboard
         .getTrends({ from: fromMonth, to: toMonth })
-        .then((res) => (!cancelled ? setTrends(res as TrendsResponse) : undefined)),
+        .then((res) => {
+          console.log("[Dashboard] /dashboard/trends response:", res);
+          if (!cancelled) setTrends(res as TrendsResponse);
+        })
+        .catch((err) => {
+          console.error("[Dashboard] /dashboard/trends error:", err);
+          throw err;
+        }),
       api.properties
         .list({ limit: "1" })
         .then((res) => {
+          console.log("[Dashboard] /properties (fallback count) response:", res);
           if (cancelled) return;
           const total =
             (res as { pagination?: { total?: number }; properties?: unknown[] })
@@ -114,7 +131,8 @@ export default function DashboardClient() {
             0;
           setPropertyCount(total);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("[Dashboard] /properties (fallback count) error:", err);
           if (!cancelled) setPropertyCount(0);
         }),
     ])
@@ -137,6 +155,20 @@ export default function DashboardClient() {
   const arrears = summary?.totalArrears ?? 0;
   const collectionRate = summary?.collectionRate ?? (expected > 0 ? collected / expected : 0);
   const occupancyRate = summary?.occupancyRate ?? 0;
+
+  if (!loading) {
+    console.log("[Dashboard] resolved values for cards:", {
+      summaryKeys: summary ? Object.keys(summary) : null,
+      totalProperties: summary?.totalProperties,
+      totalTenants: summary?.totalTenants,
+      openTickets: summary?.openTickets,
+      occupancyRate,
+      collected,
+      expected,
+      arrears,
+      propertyCountFallback: propertyCount,
+    });
+  }
 
   // Derive month-over-month change from trends
   const prevCollected = monthly.length >= 2 ? monthly[monthly.length - 2].collected : 0;
