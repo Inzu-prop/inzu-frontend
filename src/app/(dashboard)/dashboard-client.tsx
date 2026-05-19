@@ -96,32 +96,38 @@ export default function DashboardClient() {
     const toMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const fromMonth = `${from.getUTCFullYear()}-${String(from.getUTCMonth() + 1).padStart(2, "0")}`;
 
+    // eslint-disable-next-line no-console
     console.log("[Dashboard] fetching for org:", organizationId, { fromMonth, toMonth });
 
     Promise.all([
       api.dashboard
         .getSummary()
         .then((res) => {
+          // eslint-disable-next-line no-console
           console.log("[Dashboard] /dashboard/summary response:", res);
           if (!cancelled) setSummary(res as SummaryResponse);
         })
         .catch((err) => {
+          // eslint-disable-next-line no-console
           console.error("[Dashboard] /dashboard/summary error:", err);
           throw err;
         }),
       api.dashboard
         .getTrends({ from: fromMonth, to: toMonth })
         .then((res) => {
+          // eslint-disable-next-line no-console
           console.log("[Dashboard] /dashboard/trends response:", res);
           if (!cancelled) setTrends(res as TrendsResponse);
         })
         .catch((err) => {
+          // eslint-disable-next-line no-console
           console.error("[Dashboard] /dashboard/trends error:", err);
           throw err;
         }),
       api.properties
         .list({ limit: "1" })
         .then((res) => {
+          // eslint-disable-next-line no-console
           console.log("[Dashboard] /properties (fallback count) response:", res);
           if (cancelled) return;
           const total =
@@ -132,6 +138,7 @@ export default function DashboardClient() {
           setPropertyCount(total);
         })
         .catch((err) => {
+          // eslint-disable-next-line no-console
           console.error("[Dashboard] /properties (fallback count) error:", err);
           if (!cancelled) setPropertyCount(0);
         }),
@@ -157,6 +164,7 @@ export default function DashboardClient() {
   const occupancyRate = summary?.occupancyRate ?? 0;
 
   if (!loading) {
+    // eslint-disable-next-line no-console
     console.log("[Dashboard] resolved values for cards:", {
       summaryKeys: summary ? Object.keys(summary) : null,
       totalProperties: summary?.totalProperties,
