@@ -27,15 +27,20 @@ type TrendsResponse = {
 };
 
 type SummaryResponse = {
-  totalExpected?: number;
-  totalCollected?: number;
-  totalArrears?: number;
-  collectionRate?: number;
-  occupancyRate?: number;
-  totalProperties?: number;
-  totalUnits?: number;
-  totalTenants?: number;
-  openTickets?: number;
+  period?: { period: string; start: string; end: string };
+  financials?: {
+    expected: number;
+    collected: number;
+    arrears: number;
+    collectionRate: number;
+  };
+  occupancy?: {
+    totalUnits: number;
+    occupiedUnits: number;
+    occupancyRate: number;
+  };
+  byProperty?: unknown[];
+  topOverdueTenants?: unknown[];
   [key: string]: unknown;
 };
 
@@ -71,6 +76,8 @@ export default function DashboardClient() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
   const [propertyCount, setPropertyCount] = useState<number | null>(null);
+  const [tenantCount, setTenantCount] = useState<number | null>(null);
+  const [openTicketCount, setOpenTicketCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -96,51 +103,57 @@ export default function DashboardClient() {
     const toMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const fromMonth = `${from.getUTCFullYear()}-${String(from.getUTCMonth() + 1).padStart(2, "0")}`;
 
-    // eslint-disable-next-line no-console
-    console.log("[Dashboard] fetching for org:", organizationId, { fromMonth, toMonth });
+    const readPaginationTotal = (
+      res: unknown,
+      arrayKey: string,
+    ): number => {
+      const r = res as
+        | {
+            pagination?: { total?: number };
+            [k: string]: unknown;
+          }
+        | undefined;
+      const list = r?.[arrayKey];
+      return (
+        r?.pagination?.total ??
+        (Array.isArray(list) ? list.length : 0)
+      );
+    };
 
     Promise.all([
       api.dashboard
         .getSummary()
         .then((res) => {
-          // eslint-disable-next-line no-console
-          console.log("[Dashboard] /dashboard/summary response:", res);
           if (!cancelled) setSummary(res as SummaryResponse);
-        })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error("[Dashboard] /dashboard/summary error:", err);
-          throw err;
         }),
       api.dashboard
         .getTrends({ from: fromMonth, to: toMonth })
         .then((res) => {
-          // eslint-disable-next-line no-console
-          console.log("[Dashboard] /dashboard/trends response:", res);
           if (!cancelled) setTrends(res as TrendsResponse);
-        })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error("[Dashboard] /dashboard/trends error:", err);
-          throw err;
         }),
       api.properties
         .list({ limit: "1" })
         .then((res) => {
-          // eslint-disable-next-line no-console
-          console.log("[Dashboard] /properties (fallback count) response:", res);
-          if (cancelled) return;
-          const total =
-            (res as { pagination?: { total?: number }; properties?: unknown[] })
-              ?.pagination?.total ??
-            (res as { properties?: unknown[] })?.properties?.length ??
-            0;
-          setPropertyCount(total);
+          if (!cancelled) setPropertyCount(readPaginationTotal(res, "properties"));
         })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error("[Dashboard] /properties (fallback count) error:", err);
+        .catch(() => {
           if (!cancelled) setPropertyCount(0);
+        }),
+      api.tenants
+        .list({ limit: "1" })
+        .then((res) => {
+          if (!cancelled) setTenantCount(readPaginationTotal(res, "tenants"));
+        })
+        .catch(() => {
+          if (!cancelled) setTenantCount(0);
+        }),
+      api.maintenance
+        .list({ limit: "1", status: "open" })
+        .then((res) => {
+          if (!cancelled) setOpenTicketCount(readPaginationTotal(res, "tickets"));
+        })
+        .catch(() => {
+          if (!cancelled) setOpenTicketCount(0);
         }),
     ])
       .catch((err) => {
@@ -154,29 +167,16 @@ export default function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [api.dashboard, api.properties, organizationId]);
+  }, [api.dashboard, api.properties, api.tenants, api.maintenance, organizationId]);
 
   const monthly = trends?.monthly ?? [];
-  const collected = summary?.totalCollected ?? 0;
-  const expected = summary?.totalExpected ?? 0;
-  const arrears = summary?.totalArrears ?? 0;
-  const collectionRate = summary?.collectionRate ?? (expected > 0 ? collected / expected : 0);
-  const occupancyRate = summary?.occupancyRate ?? 0;
-
-  if (!loading) {
-    // eslint-disable-next-line no-console
-    console.log("[Dashboard] resolved values for cards:", {
-      summaryKeys: summary ? Object.keys(summary) : null,
-      totalProperties: summary?.totalProperties,
-      totalTenants: summary?.totalTenants,
-      openTickets: summary?.openTickets,
-      occupancyRate,
-      collected,
-      expected,
-      arrears,
-      propertyCountFallback: propertyCount,
-    });
-  }
+  const collected = summary?.financials?.collected ?? 0;
+  const expected = summary?.financials?.expected ?? 0;
+  const arrears = summary?.financials?.arrears ?? 0;
+  const collectionRate =
+    summary?.financials?.collectionRate ?? (expected > 0 ? collected / expected : 0);
+  const occupancyRate = summary?.occupancy?.occupancyRate ?? 0;
+  const totalPropertiesFromSummary = summary?.byProperty?.length;
 
   // Derive month-over-month change from trends
   const prevCollected = monthly.length >= 2 ? monthly[monthly.length - 2].collected : 0;
@@ -244,8 +244,7 @@ export default function DashboardClient() {
     color: ["#90B494", "#825D42"],
   };
 
-  const totalProperties =
-    (summary?.totalProperties as number) ?? propertyCount ?? 0;
+  const totalProperties = totalPropertiesFromSummary ?? propertyCount ?? 0;
   const hasData =
     totalProperties > 0 || collected > 0 || expected > 0;
 
@@ -449,14 +448,14 @@ export default function DashboardClient() {
                 />
                 <StatCard
                   label="Properties"
-                  value={String(summary?.totalProperties ?? 0)}
+                  value={String(totalProperties)}
                   href="/properties"
                   visible={visible}
                   delay={4}
                 />
                 <StatCard
                   label="Tenants"
-                  value={String(summary?.totalTenants ?? 0)}
+                  value={String(tenantCount ?? 0)}
                   icon={<Users size={14} style={{ opacity: 0.4 }} />}
                   href="/tenants"
                   visible={visible}
@@ -464,7 +463,7 @@ export default function DashboardClient() {
                 />
                 <StatCard
                   label="Open Tickets"
-                  value={String(summary?.openTickets ?? 0)}
+                  value={String(openTicketCount ?? 0)}
                   icon={<Wrench size={14} style={{ opacity: 0.4 }} />}
                   href="/maintenance"
                   visible={visible}
