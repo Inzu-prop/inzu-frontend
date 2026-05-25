@@ -67,10 +67,13 @@ export default function ReportsPage() {
       .finally(() => setLoading(false));
   };
 
-  const isMonthly = activeTab === "comparative";
+  const isReportMonthly = (id: (typeof REPORT_TABS)[number]["id"]) =>
+    id === "comparative" || id === "pnl";
+
+  const isMonthly = isReportMonthly(activeTab);
 
   const handleTab = (id: (typeof REPORT_TABS)[number]["id"]) => {
-    const monthly = id === "comparative";
+    const monthly = isReportMonthly(id);
     // Reset dates to the correct format when switching tab type
     if (monthly !== isMonthly) {
       setFrom(getDefaultFrom(monthly));
