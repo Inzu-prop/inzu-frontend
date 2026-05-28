@@ -289,4 +289,178 @@
     gap: 12px;
     text-align: center;
   }
+
+  /* ──────────────────────────────────────────────────────────
+     Clerk auth form (sign-in / sign-up) — INZU treatment.
+     Card chrome stripped; inputs underline-style; luxury easing.
+     Class names referenced from src/config/clerk-theme.ts.
+     ────────────────────────────────────────────────────────── */
+
+  .inzu-clerk-root {
+    width: 100%;
+    max-width: 380px;
+    animation: inzu-clerk-rise 0.6s cubic-bezier(0.19, 0.9, 0.22, 1) both;
+  }
+  @keyframes inzu-clerk-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .inzu-clerk-card,
+  .inzu-clerk-card-box {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .inzu-clerk-header {
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .inzu-clerk-header-title {
+    color: #F5F7F6;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .inzu-clerk-header-subtitle {
+    color: rgba(144, 180, 148, 0.6);
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  /* Form field group spacing */
+  .inzu-clerk-field {
+    margin-bottom: 18px;
+  }
+
+  /* Labels — micro uppercase, tracked */
+  .inzu-clerk-label {
+    color: rgba(245, 247, 246, 0.45) !important;
+    font-size: 10px !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    font-weight: 500 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* Underline-style inputs */
+  .inzu-clerk-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(144, 180, 148, 0.18) !important;
+    border-radius: 0 !important;
+    padding: 10px 0 !important;
+    color: #F5F7F6 !important;
+    font-size: 14px !important;
+    box-shadow: none !important;
+    transition: border-color 0.3s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
+  }
+  .inzu-clerk-input:hover {
+    border-bottom-color: rgba(144, 180, 148, 0.32) !important;
+  }
+  .inzu-clerk-input:focus,
+  .inzu-clerk-input:focus-visible {
+    outline: none !important;
+    border-bottom-color: #90B494 !important;
+    box-shadow: none !important;
+  }
+  .inzu-clerk-input::placeholder {
+    color: rgba(144, 180, 148, 0.25) !important;
+  }
+
+  /* Forgot / action links on the right of field */
+  .inzu-clerk-field-action {
+    color: #90B494 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.04em !important;
+    transition: color 0.2s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
+  }
+  .inzu-clerk-field-action:hover {
+    color: #F5F7F6 !important;
+  }
+
+  /* Primary button — taller, subtle hover lift */
+  .inzu-clerk-primary-button {
+    height: 46px !important;
+    background: #32533D !important;
+    color: #F5F7F6 !important;
+    font-weight: 500 !important;
+    font-size: 13.5px !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    border-radius: 6px !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-top: 8px !important;
+    transition:
+      background 0.25s cubic-bezier(0.19, 0.9, 0.22, 1),
+      transform 0.25s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
+  }
+  .inzu-clerk-primary-button:hover {
+    background: #3d6249 !important;
+    transform: translateY(-1px);
+  }
+  .inzu-clerk-primary-button:active {
+    transform: translateY(0);
+  }
+
+  /* Social buttons — block layout with hover lift */
+  .inzu-clerk-social-button {
+    background: rgba(15, 31, 17, 0.4) !important;
+    border: 1px solid rgba(144, 180, 148, 0.14) !important;
+    color: #F5F7F6 !important;
+    border-radius: 6px !important;
+    height: 42px !important;
+    font-weight: 400 !important;
+    transition:
+      background 0.22s cubic-bezier(0.19, 0.9, 0.22, 1),
+      border-color 0.22s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
+  }
+  .inzu-clerk-social-button:hover {
+    background: rgba(50, 83, 61, 0.18) !important;
+    border-color: rgba(144, 180, 148, 0.28) !important;
+  }
+  .inzu-clerk-social-text {
+    color: rgba(245, 247, 246, 0.85) !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+  }
+
+  /* Divider — refined "or" with hairlines */
+  .inzu-clerk-divider-line {
+    background: rgba(144, 180, 148, 0.10) !important;
+    height: 1px !important;
+  }
+  .inzu-clerk-divider-text {
+    color: rgba(144, 180, 148, 0.35) !important;
+    font-size: 10px !important;
+    letter-spacing: 0.24em !important;
+    text-transform: uppercase !important;
+    padding: 0 12px !important;
+  }
+
+  /* Footer — flat, no card chrome, with subtle link hover */
+  .inzu-clerk-footer {
+    background: transparent !important;
+    border-top: none !important;
+    padding-top: 24px !important;
+    margin-top: 24px !important;
+  }
+  .inzu-clerk-footer-action-text {
+    color: rgba(144, 180, 148, 0.55) !important;
+    font-size: 12px !important;
+  }
+  .inzu-clerk-footer-action-link {
+    color: #90B494 !important;
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    transition: color 0.2s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
+  }
+  .inzu-clerk-footer-action-link:hover {
+    color: #F5F7F6 !important;
+  }
 }
