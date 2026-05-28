@@ -324,7 +324,7 @@
       0 1px 0 rgba(245, 247, 246, 0.06) inset,
       0 24px 64px -24px rgba(0, 0, 0, 0.55) !important;
     border-radius: 16px !important;
-    padding: 40px 44px 32px !important;
+    padding: 28px 36px 22px !important;
     width: 100% !important;
     position: relative;
     overflow: hidden;
@@ -361,25 +361,25 @@
   }
 
   .inzu-clerk-header {
-    margin-bottom: 28px;
+    margin-bottom: 18px;
     text-align: left;
   }
   .inzu-clerk-header-title {
     color: #F5F7F6;
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.15;
   }
   .inzu-clerk-header-subtitle {
     color: rgba(144, 180, 148, 0.6);
-    font-size: 13px;
-    margin-top: 6px;
+    font-size: 12.5px;
+    margin-top: 4px;
   }
 
   /* Form field group spacing */
   .inzu-clerk-field {
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
 
   /* Labels — micro uppercase, tracked */
@@ -398,7 +398,7 @@
     border: none !important;
     border-bottom: 1px solid rgba(144, 180, 148, 0.18) !important;
     border-radius: 0 !important;
-    padding: 10px 0 !important;
+    padding: 8px 0 !important;
     color: #F5F7F6 !important;
     font-size: 14px !important;
     box-shadow: none !important;
@@ -430,17 +430,17 @@
 
   /* Primary button — taller, subtle hover lift */
   .inzu-clerk-primary-button {
-    height: 46px !important;
+    height: 42px !important;
     background: #32533D !important;
     color: #F5F7F6 !important;
     font-weight: 500 !important;
-    font-size: 13.5px !important;
+    font-size: 13px !important;
     letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
     border-radius: 6px !important;
     border: none !important;
     box-shadow: none !important;
-    margin-top: 8px !important;
+    margin-top: 4px !important;
     transition:
       background 0.25s cubic-bezier(0.19, 0.9, 0.22, 1),
       transform 0.25s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
@@ -459,8 +459,9 @@
     border: 1px solid rgba(144, 180, 148, 0.14) !important;
     color: #F5F7F6 !important;
     border-radius: 6px !important;
-    height: 42px !important;
+    height: 38px !important;
     font-weight: 400 !important;
+    margin-bottom: 6px !important;
     transition:
       background 0.22s cubic-bezier(0.19, 0.9, 0.22, 1),
       border-color 0.22s cubic-bezier(0.19, 0.9, 0.22, 1) !important;
@@ -493,8 +494,8 @@
     background: transparent !important;
     background-color: transparent !important;
     border-top: 1px solid rgba(144, 180, 148, 0.08) !important;
-    padding: 20px 0 0 !important;
-    margin-top: 24px !important;
+    padding: 12px 0 0 !important;
+    margin-top: 14px !important;
     box-shadow: none !important;
   }
   .inzu-clerk-footer-action-text {

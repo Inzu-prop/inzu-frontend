@@ -5,10 +5,11 @@ export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
-        minHeight: "100dvh",
+        height: "100dvh",
         display: "flex",
         background: "#13270D",
         fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
+        overflow: "hidden",
       }}
     >
       {/* ── Left brand panel ── */}
@@ -95,17 +96,18 @@ export function AuthShell({ children }: { children: ReactNode }) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "32px 24px",
-          minHeight: "100dvh",
+          padding: "24px",
+          height: "100dvh",
+          overflow: "hidden",
         }}
       >
         {/* Mobile logo (hidden on desktop) */}
-        <div className="mb-8 lg:hidden">
+        <div className="mb-4 lg:hidden">
           <Image
             src="/inzu_logo_typeface.svg"
             alt="INZU"
-            width={80}
-            height={20}
+            width={72}
+            height={18}
             priority
             style={{ objectFit: "contain" }}
           />
