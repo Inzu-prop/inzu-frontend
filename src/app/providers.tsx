@@ -14,6 +14,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider
       publishableKey={publishableKey}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
       appearance={{
         layout: clerkLayout,
         variables: getClerkAppearanceVariables("light"),
