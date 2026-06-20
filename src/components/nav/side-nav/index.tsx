@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { useAtom } from "jotai";
 import { useClerk, useOrganization } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { mobileNavOpenAtom } from "@/lib/atoms";
+import { mobileNavOpenAtom, desktopSidebarExpandedAtom } from "@/lib/atoms";
 import Navigation from "./components/navigation";
 import User from "./components/user";
 
 export default function SideNav() {
   const [mobileOpen, setMobileOpen] = useAtom(mobileNavOpenAtom);
-  const [hovered, setHovered] = useState(false);
+  const [desktopExpanded, setDesktopExpanded] = useAtom(desktopSidebarExpandedAtom);
   const { organization } = useOrganization();
   const { openOrganizationProfile } = useClerk();
-
-  const desktopExpanded = hovered;
 
   return (
     <>
@@ -25,9 +23,36 @@ export default function SideNav() {
           onClick={() => setMobileOpen(false)}
         />
       )}
+
+      {/* Desktop collapse/expand toggle — click to open or draw back the sidebar */}
+      <button
+        type="button"
+        onClick={() => setDesktopExpanded((v) => !v)}
+        aria-label={desktopExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        className={cn(
+          "fixed top-[58px] z-50 hidden h-6 w-6 items-center justify-center rounded-full laptop:flex",
+          "transition-[left] duration-[280ms] ease-luxury",
+        )}
+        style={{
+          left: desktopExpanded ? 188 : 52,
+          background: "rgba(19, 39, 13, 0.95)",
+          border: "1px solid rgba(144, 180, 148, 0.3)",
+          color: "#90B494",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+        }}
+      >
+        <ChevronLeft
+          size={14}
+          strokeWidth={2}
+          style={{
+            transform: desktopExpanded ? "rotate(0deg)" : "rotate(180deg)",
+            transition: "transform 280ms cubic-bezier(0.19, 0.9, 0.22, 1)",
+          }}
+        />
+      </button>
+
       <aside
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         style={{
           background: "rgba(19, 39, 13, 0.85)",
           backdropFilter: "blur(20px)",
