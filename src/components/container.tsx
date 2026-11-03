@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { cn } from "@/lib/utils";
+import { cx } from "@/utils/cx";
 
 const Container = forwardRef<
   React.ElementRef<"div">,
@@ -8,8 +8,8 @@ const Container = forwardRef<
   return (
     <div
       ref={ref}
-      className={cn(
-        "max-w-8xl mx-auto w-full px-6 tablet:px-10 desktop:px-14",
+      className={cx(
+        "mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8",
         className,
       )}
       {...props}
