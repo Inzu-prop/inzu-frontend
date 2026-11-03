@@ -62,13 +62,9 @@ function History({
   const [page, setPage] = useState(0);
   const [descending, setDescending] = useState(true);
   const date = (r: ProfileRecord) =>
-    words(
-      kind === "payments"
-        ? (r.paidAt ?? r.createdAt)
-        : kind === "invoices"
-          ? r.dueDate
-          : r.createdAt,
-    );
+    kind === "payments"
+      ? words(r.transactionDate) || words(r.paidAt) || words(r.createdAt)
+      : words(kind === "invoices" ? r.dueDate : r.createdAt);
   const rows = data.rows
     .filter((r) =>
       Object.values(r).some(
@@ -132,7 +128,13 @@ function History({
           {rows.slice(currentPage * 6, currentPage * 6 + 6).map((r, i) => {
             const id = recordId(r);
             const label =
-              words(r.invoiceNumber ?? r.reference ?? r.title) ||
+              words(
+                r.invoiceNumber ??
+                  r.paymentNumber ??
+                  r.mpesaReceiptNumber ??
+                  r.reference ??
+                  r.title,
+              ) ||
               (kind === "invoices"
                 ? words(r.period) || "Rent invoice"
                 : kind === "payments"
@@ -145,13 +147,23 @@ function History({
             return (
               <TableRow key={id || i}>
                 <TableCell>
-                  {invoiceHref ? (
-                    <ButtonLink href={invoiceHref} variant="ghost" size="xs">
-                      {label}
-                    </ButtonLink>
-                  ) : (
-                    label
-                  )}
+                  <div className="flex flex-col gap-1">
+                    {invoiceHref ? (
+                      <ButtonLink href={invoiceHref} variant="ghost" size="xs">
+                        {label}
+                      </ButtonLink>
+                    ) : (
+                      <span>{label}</span>
+                    )}
+                    {kind === "payments" &&
+                    (words(r.method) || words(r.period)) ? (
+                      <span className="text-caption-1-regular text-text-tertiary">
+                        {[words(r.method), words(r.period)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell>{dateLabel(date(r))}</TableCell>
                 <TableCell>
@@ -160,9 +172,17 @@ function History({
                     : money(r.totalAmount ?? r.amount)}
                 </TableCell>
                 <TableCell>
-                  <Chip color="soft" variant="caption">
-                    {words(r.status) || "Not recorded"}
-                  </Chip>
+                  <div className="flex flex-wrap gap-1">
+                    <Chip color="soft" variant="caption">
+                      {words(r.status) || "Not recorded"}
+                    </Chip>
+                    {kind === "payments" &&
+                    typeof r.reconciled === "boolean" ? (
+                      <Chip color="soft" variant="caption">
+                        {r.reconciled ? "Reconciled" : "Not reconciled"}
+                      </Chip>
+                    ) : null}
+                  </div>
                 </TableCell>
               </TableRow>
             );
