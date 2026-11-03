@@ -82,6 +82,22 @@ export function DemoTenantProfile({
           arrears: 0,
           leaseStart: `${current.slice(0, 4)}-01-01`,
           leaseEnd: `${Number(current.slice(0, 4)) + 1}-01-01`,
+          occupation: "Sample operations coordinator",
+          employerName: "Fictional Example Services",
+          emergencyContacts: [
+            {
+              name: "Sample emergency contact",
+              relationship: "Friend",
+              phoneNumber: "+254 700 000 000",
+            },
+          ],
+          documents: [
+            {
+              name: "Sample tenancy summary (fictional)",
+              type: "Sample document",
+              uploadedAt: `${current}-01`,
+            },
+          ],
         }}
         unit={{
           unitNumber: `${String.fromCharCode(65 + (index % 3))}${Math.floor(index / 3) + 1}`,

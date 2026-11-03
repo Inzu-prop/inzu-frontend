@@ -22,6 +22,7 @@ import {
   dateLabel,
   money,
   record,
+  tenantDocuments,
   words,
 } from "@/lib/tenant-profile";
 
@@ -40,6 +41,10 @@ function Fields({ values }: { values: [string, ReactNode][] }) {
       ))}
     </dl>
   );
+}
+
+function recordedFields(values: [string, ReactNode][]): [string, ReactNode][] {
+  return values.filter(([, value]) => Boolean(value));
 }
 
 function History({
@@ -189,11 +194,51 @@ export function TenantProfileView({
   )
     .map(record)
     .filter((contact) => contact.name || contact.phoneNumber || contact.email);
-  const documents = [
-    { name: "ID Document", url: tenant.idDocumentUrl },
-    { name: "Employment Document", url: tenant.employmentDocumentUrl },
-    ...(Array.isArray(tenant.documents) ? tenant.documents.map(record) : []),
-  ].filter((document) => /^https?:\/\//i.test(words(document.url)));
+  const documents = tenantDocuments(tenant);
+  const employment = record(tenant.employment);
+  const employmentFields = recordedFields([
+    [
+      "Employer / business",
+      words(
+        employment.employerName ??
+          employment.businessName ??
+          tenant.employerName ??
+          tenant.businessName,
+      ),
+    ],
+    [
+      "Occupation",
+      words(
+        employment.occupation ??
+          employment.jobTitle ??
+          tenant.occupation ??
+          tenant.jobTitle,
+      ),
+    ],
+    [
+      "Work phone",
+      words(
+        employment.phoneNumber ??
+          employment.workPhone ??
+          tenant.workPhoneNumber ??
+          tenant.workPhone,
+      ),
+    ],
+    [
+      "Work email",
+      words(employment.email ?? employment.workEmail ?? tenant.workEmail),
+    ],
+  ]);
+  const guarantor = record(tenant.guarantor);
+  const guarantorFields = recordedFields([
+    ["Name", words(guarantor.name ?? tenant.guarantorName)],
+    [
+      "Relationship",
+      words(guarantor.relationship ?? tenant.guarantorRelationship),
+    ],
+    ["Phone", words(guarantor.phoneNumber ?? tenant.guarantorPhoneNumber)],
+    ["Email", words(guarantor.email ?? tenant.guarantorEmail)],
+  ]);
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -336,29 +381,69 @@ export function TenantProfileView({
               </p>
             )}
           </section>
+          {employmentFields.length ? (
+            <section className={panel}>
+              <h3 className="text-headline-medium mb-5">Employment</h3>
+              <Fields values={employmentFields} />
+            </section>
+          ) : null}
+          {guarantorFields.length ? (
+            <section className={panel}>
+              <h3 className="text-headline-medium mb-5">Guarantor</h3>
+              <Fields values={guarantorFields} />
+            </section>
+          ) : null}
           <section className={panel}>
             <h3 className="text-headline-medium mb-5">Documents</h3>
             {documents.length ? (
-              <ul className="flex flex-col gap-3">
+              <ul className="divide-separator-border flex flex-col divide-y">
                 {documents.map((document, index) => (
-                  <li key={index}>
-                    <ButtonLink
-                      variant="ghost"
-                      size="small"
-                      href={words(document.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {words(document.name) ||
-                        words((document as ProfileRecord).type) ||
-                        `Document ${index + 1}`}
-                    </ButtonLink>
+                  <li
+                    key={`${document.name}:${document.uploadedAt}:${index}`}
+                    className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0"
+                  >
+                    <div>
+                      <p className="text-body-2-medium text-text-primary">
+                        {document.name}
+                      </p>
+                      <p className="text-caption-1-regular text-text-tertiary mt-1">
+                        {[
+                          document.category,
+                          document.uploadedAt
+                            ? `Uploaded ${dateLabel(document.uploadedAt)}`
+                            : "",
+                          document.uploadedBy
+                            ? `By ${document.uploadedBy}`
+                            : "",
+                          document.expiresAt
+                            ? `Expires ${dateLabel(document.expiresAt)}`
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                    {document.url ? (
+                      <ButtonLink
+                        variant="ghost"
+                        size="xs"
+                        href={document.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open file
+                      </ButtonLink>
+                    ) : (
+                      <p className="text-caption-1-regular text-text-tertiary">
+                        File access is unavailable for this record.
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="text-body-2-regular text-text-secondary">
-                No documents uploaded.
+                No document records were returned.
               </p>
             )}
           </section>
