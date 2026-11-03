@@ -1,0 +1,157 @@
+/* INZU brand restored from blueprint.md. BoardUI components keep semantic tokens. */
+@theme {
+  --color-accent-50: #f0f5f0;
+  --color-accent-100: #e1ebe2;
+  --color-accent-200: #c4d7c7;
+  --color-accent-300: #a7c3ac;
+  --color-accent-400: #90b494;
+  --color-accent-500: #32533d;
+  --color-accent-600: #2d4b3e;
+  --color-accent-700: #254032;
+  --color-accent-800: #1e3528;
+  --color-accent-900: #182d20;
+  --color-accent-950: #13270d;
+}
+:root {
+  --font-inter: var(--font-inzu);
+  --font-gabarito: var(--font-inzu);
+  --color-background-full: #f5f7f6;
+  --color-background-primary-default: #fafbf9;
+  --color-background-primary-hover: #edf2ed;
+  --color-background-secondary-default: #eaf0e9;
+  --color-background-secondary-hover: #e1e9df;
+  --color-background-tertiary-default: #e1e9df;
+  --color-background-tertiary-hover: #d7e2d5;
+  --color-background-inner-default: #f5f7f6;
+  --color-text-primary: #13270d;
+  --color-text-secondary: #526552;
+  --color-text-tertiary: #6e7f6d;
+  --color-foreground-icon-primary: #32533d;
+  --color-foreground-icon-secondary: #6e896f;
+  --color-foreground-icon-tertiary: #8ca38a;
+  --color-border-button-default: #dce5da;
+  --color-border-button-hover: #a7c3ac;
+  --color-border-table: #dce5da;
+  --color-separator-border: #dce5da;
+  --color-chart-1: #90b494;
+  --color-chart-1-active: #32533d;
+  --color-chart-2: #90b494;
+  --color-chart-2-active: #32533d;
+  --color-chart-neutral: #b5c5b4;
+  --color-chart-cursor: #90b494;
+  --shadow-card: none;
+  --shadow-sidebar: none;
+}
+.inzu-sidebar {
+  --color-background-full: #2d4b3e;
+  --color-background-secondary-default: #2d4b3e;
+  --color-background-secondary-hover: #3b5b48;
+  --color-background-tertiary-default: #365341;
+  --color-background-tertiary-hover: #3f604b;
+  --color-background-primary-default: #365341;
+  --color-background-primary-hover: #3f604b;
+  --color-text-primary: #f5f7f6;
+  --color-text-secondary: #c0d0bf;
+  --color-text-tertiary: #90b494;
+  --color-foreground-icon-primary: #f5f7f6;
+  --color-foreground-icon-secondary: #90b494;
+  --color-border-button-white: transparent;
+  --color-border-button-default: #496651;
+  --color-accent-500: #496e51;
+  --color-accent-600: #496e51;
+  --shadow-nav-selected: none;
+}
+.inzu-brand-mark { width: 24px; height: 24px; flex: none; }
+.inzu-brand-wordmark { width: 52px; height: 34px; flex: none; }
+.inzu-sidebar[data-collapsed="true"] .inzu-brand-wordmark { display: none; }
+.inzu-sidebar[data-collapsed="true"] .inzu-sidebar-footer-label { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .inzu-sidebar *, .animate-number-fade { animation: none !important; transition: none !important; }
+}
+
+@theme {
+  --text-body-regular: 0.8125rem;
+  --text-body-regular--line-height: 1.25rem;
+  --text-body-regular--font-weight: 400;
+  --text-body-medium: 0.8125rem;
+  --text-body-medium--line-height: 1.25rem;
+  --text-body-medium--font-weight: 400;
+  --text-body-semibold: 0.8125rem;
+  --text-body-semibold--line-height: 1.25rem;
+  --text-body-semibold--font-weight: 600;
+  --text-body-bold: 0.8125rem;
+  --text-body-bold--line-height: 1.25rem;
+  --text-body-bold--font-weight: 600;
+  --text-body-2-regular: 0.75rem;
+  --text-body-2-regular--line-height: 1.125rem;
+  --text-body-2-regular--font-weight: 400;
+  --text-body-2-medium: 0.75rem;
+  --text-body-2-medium--line-height: 1.125rem;
+  --text-body-2-medium--font-weight: 400;
+  --text-body-2-semibold: 0.75rem;
+  --text-body-2-semibold--line-height: 1.125rem;
+  --text-body-2-semibold--font-weight: 600;
+  --text-body-2-bold: 0.75rem;
+  --text-body-2-bold--line-height: 1.125rem;
+  --text-body-2-bold--font-weight: 600;
+  --text-caption-1-regular: 0.6875rem;
+  --text-caption-1-regular--line-height: 1rem;
+  --text-caption-1-regular--font-weight: 400;
+  --text-caption-1-medium: 0.6875rem;
+  --text-caption-1-medium--line-height: 1rem;
+  --text-caption-1-medium--font-weight: 400;
+  --text-caption-1-semibold: 0.6875rem;
+  --text-caption-1-semibold--line-height: 1rem;
+  --text-caption-1-semibold--font-weight: 600;
+  --text-caption-1-bold: 0.6875rem;
+  --text-caption-1-bold--line-height: 1rem;
+  --text-caption-1-bold--font-weight: 600;
+  --text-title-1-regular: 1.5rem;
+  --text-title-1-regular--line-height: 2rem;
+  --text-title-1-regular--font-weight: 400;
+  --text-title-1-medium: 1.5rem;
+  --text-title-1-medium--line-height: 2rem;
+  --text-title-1-medium--font-weight: 400;
+  --text-title-1-semibold: 1.5rem;
+  --text-title-1-semibold--line-height: 2rem;
+  --text-title-1-semibold--font-weight: 600;
+  --text-title-1-bold: 1.5rem;
+  --text-title-1-bold--line-height: 2rem;
+  --text-title-1-bold--font-weight: 600;
+  --text-title-2-regular: 1.25rem;
+  --text-title-2-regular--line-height: 1.75rem;
+  --text-title-2-regular--font-weight: 400;
+  --text-title-2-medium: 1.25rem;
+  --text-title-2-medium--line-height: 1.75rem;
+  --text-title-2-medium--font-weight: 400;
+  --text-title-2-semibold: 1.25rem;
+  --text-title-2-semibold--line-height: 1.75rem;
+  --text-title-2-semibold--font-weight: 600;
+  --text-title-2-bold: 1.25rem;
+  --text-title-2-bold--line-height: 1.75rem;
+  --text-title-2-bold--font-weight: 600;
+  --text-headline-regular: 0.9375rem;
+  --text-headline-regular--line-height: 1.5rem;
+  --text-headline-regular--font-weight: 400;
+  --text-headline-medium: 0.9375rem;
+  --text-headline-medium--line-height: 1.5rem;
+  --text-headline-medium--font-weight: 400;
+  --text-headline-semibold: 0.9375rem;
+  --text-headline-semibold--line-height: 1.5rem;
+  --text-headline-semibold--font-weight: 600;
+  --text-headline-bold: 0.9375rem;
+  --text-headline-bold--line-height: 1.5rem;
+  --text-headline-bold--font-weight: 600;
+}
+
+.inzu-sidebar[data-collapsed="false"] .inzu-brand-mark { display: none; }
+
+.inzu-sidebar {
+  --text-body-medium: 0.75rem;
+  --text-body-medium--line-height: 1.125rem;
+  --text-body-regular: 0.75rem;
+  --text-body-regular--line-height: 1.125rem;
+}
+
+/* Fit the brand and toggle within the 36px rail without changing rows. */
+.inzu-sidebar[data-collapsed="true"] .inzu-brand-mark { width: 16px; height: 24px; }

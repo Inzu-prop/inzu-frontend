@@ -1,5 +1,6 @@
 import { addDays, endOfDay, isWithinInterval, startOfDay } from "date-fns";
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import type { DateRange } from "react-day-picker";
 import { averageTicketsCreated } from "@/data/average-tickets-created";
 import type { TicketMetric } from "@/types/types";
@@ -50,3 +51,6 @@ export const ticketChartDataAtom = atom((get) => {
       return res;
     });
 });
+
+/** Shared across route changes; persisted only when the user toggles it. */
+export const sidebarCollapsedAtom = atomWithStorage("inzu:sidebar-collapsed", false);

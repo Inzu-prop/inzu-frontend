@@ -1,159 +1,128 @@
 "use client";
 
-import { useState } from "react";
 import { useAtom } from "jotai";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { useClerk, useOrganization } from "@clerk/nextjs";
-import { cn } from "@/lib/utils";
+import {
+  RiBankCardLine,
+  RiBarChartBoxLine,
+  RiBuildingLine,
+  RiDashboardLine,
+  RiFileList3Line,
+  RiGroupLine,
+  RiLayoutGridLine,
+  RiSettings4Line,
+  RiToolsLine,
+} from "@remixicon/react";
+import {
+  type DashboardNavItem,
+  DashboardSidebar,
+} from "@/components/application/dashboard/dashboard-sidebar";
+import { Button } from "@/components/base/buttons/button";
+import { InzuBrand } from "@/components/inzu-brand";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { mobileNavOpenAtom } from "@/lib/atoms";
-import Navigation from "./components/navigation";
-import User from "./components/user";
+
+export const inzuNavigation: DashboardNavItem[] = [
+  { key: "/", label: "Overview", href: "/", icon: RiDashboardLine },
+  {
+    key: "/properties",
+    label: "Properties",
+    href: "/properties",
+    icon: RiBuildingLine,
+  },
+  { key: "/units", label: "Units", href: "/units", icon: RiLayoutGridLine },
+  { key: "/tenants", label: "Tenants", href: "/tenants", icon: RiGroupLine },
+  {
+    key: "/invoices",
+    label: "Invoices",
+    href: "/invoices",
+    icon: RiFileList3Line,
+  },
+  {
+    key: "/payments",
+    label: "Payments",
+    href: "/payments",
+    icon: RiBankCardLine,
+  },
+  {
+    key: "/maintenance",
+    label: "Maintenance",
+    href: "/maintenance",
+    icon: RiToolsLine,
+  },
+  {
+    key: "/reports",
+    label: "Reports",
+    href: "/reports",
+    icon: RiBarChartBoxLine,
+  },
+  {
+    key: "/settings",
+    label: "Settings",
+    href: "/settings",
+    icon: RiSettings4Line,
+  },
+];
 
 export default function SideNav() {
   const [mobileOpen, setMobileOpen] = useAtom(mobileNavOpenAtom);
-  const [hovered, setHovered] = useState(false);
+  const pathname = usePathname();
   const { organization } = useOrganization();
   const { openOrganizationProfile } = useClerk();
-
-  const desktopExpanded = hovered;
-
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+  const selected =
+    inzuNavigation.find(
+      (item) => item.key !== "/" && pathname.startsWith(item.key),
+    )?.key ?? "/";
+  const workspace = <InzuBrand />;
+  const footer = organization ? (
+    <Button
+      variant="secondary"
+      leadingIcon={RiBuildingLine}
+      onClick={() => openOrganizationProfile()}
+      aria-label="Manage organization"
+      className="max-w-full overflow-hidden"
+    >
+      <span className="truncate">{organization.name}</span>
+    </Button>
+  ) : (
+    <span className="text-caption-1-regular text-text-tertiary">
+      Your property workspace
+    </span>
+  );
   return (
     <>
-      {/* Mobile/tablet backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 laptop:hidden"
-          onClick={() => setMobileOpen(false)}
+      <div className="sticky top-0 hidden h-dvh shrink-0 py-3 ps-3 laptop:block">
+        <DashboardSidebar
+          items={inzuNavigation}
+          selected={selected}
+          workspace={workspace}
+          footer={footer}
+          showThemeToggle={false}
         />
-      )}
-      <aside
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          background: "rgba(19, 39, 13, 0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(144, 180, 148, 0.15)",
-          borderRadius: "0 16px 16px 0",
-          willChange: "width",
-          contain: "layout paint",
-        }}
-        className={cn(
-          "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] shrink-0 overflow-x-hidden",
-          "transition-[width,transform] duration-[280ms] ease-luxury",
-          // Mobile: slide in/out at full width
-          mobileOpen ? "translate-x-0 w-[200px]" : "-translate-x-full laptop:translate-x-0",
-          // Desktop: collapsed (w-16) or expanded on hover (w-[200px])
-          !mobileOpen && (desktopExpanded ? "laptop:w-[200px]" : "laptop:w-16"),
-        )}
-      >
-        {/* Fixed-width inner shell — children never reflow during width animation */}
-        <div
-          style={{
-            width: 200,
-            minWidth: 200,
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-          }}
+      </div>
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DialogContent
+          className="bg-background-full left-0 start-0 top-0 h-dvh w-72 max-w-full translate-x-0 translate-y-0 border-0 p-2 sm:rounded-none [&>button]:hidden"
+          aria-describedby={undefined}
         >
-        <User expanded={desktopExpanded} mobileOpen={mobileOpen} />
-        <Navigation
-          onNavigate={() => setMobileOpen(false)}
-          expanded={desktopExpanded || mobileOpen}
-        />
-
-        {/* Organization display pinned to bottom */}
-        <div className="mt-auto px-3 pb-4">
-          {organization && (
-            <button
-              type="button"
-              onClick={() => openOrganizationProfile()}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "8px 10px",
-                borderRadius: 10,
-                background: "rgba(144,180,148,0.07)",
-                overflow: "hidden",
-                borderTop: "1px solid rgba(144,180,148,0.1)",
-                paddingTop: 10,
-                marginBottom: 0,
-                width: "100%",
-                border: "none",
-                cursor: "pointer",
-                transition: "background 0.18s ease",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(144,180,148,0.14)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(144,180,148,0.07)";
-              }}
-            >
-              {/* Org initials avatar */}
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: "rgba(144,180,148,0.22)",
-                  border: "1px solid rgba(144,180,148,0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  color: "#90B494",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {(organization.name ?? "O").slice(0, 2).toUpperCase()}
-              </div>
-              {/* Org name — fades in after width expands; fades out immediately on collapse */}
-              <div
-                style={{
-                  opacity: desktopExpanded || mobileOpen ? 1 : 0,
-                  transition: (desktopExpanded || mobileOpen)
-                    ? "opacity 180ms ease 140ms"
-                    : "opacity 120ms ease",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  style={{
-                    color: "rgba(245,247,246,0.9)",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    letterSpacing: "0.01em",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {organization.name}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(144,180,148,0.65)",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    marginTop: 1,
-                  }}
-                >
-                  Organization
-                </div>
-              </div>
-            </button>
-          )}
-        </div>
-        </div>
-      </aside>
+          <DialogTitle className="sr-only">Main navigation</DialogTitle>
+          <DashboardSidebar
+            mobile
+            onClose={() => setMobileOpen(false)}
+            items={inzuNavigation}
+            selected={selected}
+            workspace={workspace}
+            footer={footer}
+            showThemeToggle={false}
+            className="w-full"
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
