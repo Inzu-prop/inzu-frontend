@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useInzuApi } from "@/hooks/use-inzu-api";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { ApiError } from "@/lib/api";
 
 type Ticket = {
@@ -72,6 +73,7 @@ function formatDate(dateStr?: string) {
 
 export default function MaintenancePage() {
   const api = useInzuApi();
+  const { organizationId, isLoaded } = useCurrentOrganizationId();
   const [data, setData] = useState<Ticket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +87,7 @@ export default function MaintenancePage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   function fetchTickets() {
+    if (!organizationId) return () => {};
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -97,10 +100,14 @@ export default function MaintenancePage() {
   }
 
   useEffect(() => {
+    if (!isLoaded || !organizationId) {
+      setLoading(false);
+      return;
+    }
     const cancel = fetchTickets();
     return cancel;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded, organizationId]);
 
   function handleSubmitTicket(e: React.FormEvent) {
     e.preventDefault();

@@ -24,6 +24,24 @@ import type {
 } from "./invoices";
 import { ApiError } from "./errors";
 
+export type PaymentListItem = {
+  _id: string;
+  paymentNumber?: string;
+  amount?: number;
+  method?: string;
+  status?: string;
+  period?: string;
+  transactionDate?: string;
+  mpesaReceiptNumber?: string;
+  reconciled?: boolean;
+  tenantId?: string;
+};
+
+export type PaymentsListResponse = {
+  payments: PaymentListItem[];
+  total: number;
+};
+
 export type SendPortalInviteResponse = {
   success: true;
   message: string;
@@ -151,6 +169,26 @@ export type InzuApiDeps = {
   getOrganizationId: () => string | null;
 };
 
+function extractErrorMessage(body: string, status: number): string {
+  const fallback = `API error ${status}`;
+  if (!body) return fallback;
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      for (const key of ["error", "message", "detail"]) {
+        const value = obj[key];
+        if (typeof value === "string" && value.trim()) return value;
+      }
+    }
+    if (typeof parsed === "string" && parsed.trim()) return parsed;
+  } catch {
+    const trimmed = body.trim();
+    if (trimmed && trimmed.length < 300) return trimmed;
+  }
+  return fallback;
+}
+
 function buildUrl(
   baseUrl: string,
   path: string,
@@ -205,7 +243,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new ApiError(res.status, `API error ${res.status}`, text);
+      throw new ApiError(res.status, extractErrorMessage(text, res.status), text);
     }
     if (res.status === 204) {
       return undefined as T;
@@ -342,7 +380,7 @@ export function createInzuApiClient(deps: InzuApiDeps) {
     },
     payments: {
       list: (params?: Record<string, string>) =>
-        request<unknown>("GET", "organizations/:organizationId/payments", { params }),
+        request<PaymentsListResponse>("GET", "organizations/:organizationId/payments", { params }),
       request: (body: { invoiceId: string; phoneNumber?: string }) =>
         request<{ requests: { paymentId: string; customerMessage: string; amount: number }[] }>(
           "POST",

@@ -7,6 +7,8 @@ export {
   type NotificationSettings,
   type OrgSettings,
   type SettingsGetResponse,
+  type PaymentListItem,
+  type PaymentsListResponse,
 } from "./client";
 export type {
   CreatePropertyBody,

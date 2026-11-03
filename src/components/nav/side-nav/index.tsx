@@ -11,7 +11,6 @@ import {
   RiDashboardLine,
   RiFileList3Line,
   RiGroupLine,
-  RiLayoutGridLine,
   RiSettings4Line,
   RiToolsLine,
 } from "@remixicon/react";
@@ -32,7 +31,6 @@ export const inzuNavigation: DashboardNavItem[] = [
     href: "/properties",
     icon: RiBuildingLine,
   },
-  { key: "/units", label: "Units", href: "/units", icon: RiLayoutGridLine },
   { key: "/tenants", label: "Tenants", href: "/tenants", icon: RiGroupLine },
   {
     key: "/invoices",

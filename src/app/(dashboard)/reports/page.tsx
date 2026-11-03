@@ -12,6 +12,7 @@ import { ArrearsReport } from "./arrears-report";
 import { CashflowReport } from "./cashflow-report";
 import { ComparativeReport } from "./comparative-report";
 import { PerformanceReport } from "./performance-report";
+import { PnlReport } from "./pnl-report";
 
 const REPORT_TABS = [
   { id: "performance", label: "Performance" },
@@ -74,21 +75,22 @@ export default function ReportsPage() {
       .finally(() => setLoading(false));
   };
 
-  const isMonthly = activeTab === "comparative";
+  const isReportMonthly = (id: (typeof REPORT_TABS)[number]["id"]) =>
+    id === "comparative" || id === "pnl";
+  const isMonthly = isReportMonthly(activeTab);
 
   const handleTab = (id: (typeof REPORT_TABS)[number]["id"]) => {
-    const monthly = id === "comparative";
+    const monthly = isReportMonthly(id);
+    const nextFrom = monthly !== isMonthly ? getDefaultFrom(monthly) : from;
+    const nextTo = monthly !== isMonthly ? getDefaultTo(monthly) : to;
     // Reset dates to the correct format when switching tab type
     if (monthly !== isMonthly) {
       setFrom(getDefaultFrom(monthly));
       setTo(getDefaultTo(monthly));
     }
     setActiveTab(id);
-    loadReport(
-      id,
-      monthly ? getDefaultFrom(monthly) : from,
-      monthly ? getDefaultTo(monthly) : to,
-    );
+    setData(null);
+    loadReport(id, nextFrom, nextTo);
   };
 
   const handleRun = () => loadReport(activeTab, from, to);
@@ -159,6 +161,10 @@ export default function ReportsPage() {
               ) : activeTab === "comparative" ? (
                 <ComparativeReport
                   data={data as Parameters<typeof ComparativeReport>[0]["data"]}
+                />
+              ) : activeTab === "pnl" ? (
+                <PnlReport
+                  data={data as Parameters<typeof PnlReport>[0]["data"]}
                 />
               ) : (
                 <pre className="overflow-auto rounded-md border border-border bg-muted/30 p-4 text-sm">

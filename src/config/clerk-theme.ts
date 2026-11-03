@@ -57,220 +57,108 @@ export const clerkDropdownElements = {
 } as const;
 
 /**
- * Full Clerk appearance for auth pages (sign-in / sign-up) — dark INZU theme.
- * Uses Clerk's `variables` for base palette + `elements` for fine-grained control.
+ * Full Clerk appearance for auth pages (sign-in / sign-up) — INZU treatment.
+ * Pseudo-states (hover, focus) require real CSS — see .inzu-clerk-* classes
+ * in src/style/globals.css. Inline `variables` cover the base palette so
+ * unstyled Clerk elements still inherit INZU colors.
  */
 export const clerkAuthAppearance = {
   variables: {
-    colorBackground: "#182d1a",
-    colorInputBackground: "#0f1f11",
+    colorBackground: "transparent",
     colorPrimary: "#32533D",
     colorText: "#F5F7F6",
     colorTextSecondary: "#90B494",
     colorInputText: "#F5F7F6",
+    colorInputBackground: "transparent",
     colorDanger: "#E22026",
     colorNeutral: "#F5F7F6",
     colorTextOnPrimaryBackground: "#F5F7F6",
     borderRadius: "0.5rem",
     fontFamily:
-      '"Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      'var(--font-gabarito), "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontFamilyButtons:
-      '"Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    spacingUnit: "16px",
+      'var(--font-gabarito), "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    spacingUnit: "14px",
     fontSize: "14px",
   },
   elements: {
-    rootBox: {
-      width: "100%",
-    },
-    cardBox: {
-      boxShadow: "none",
-      border: "1px solid rgba(144, 180, 148, 0.12)",
-      borderRadius: "12px",
-      width: "100%",
-    },
-    card: {
-      boxShadow: "none",
-      background: "#182d1a",
-      borderRadius: "12px",
-      width: "100%",
-    },
-    headerTitle: {
-      color: "#F5F7F6",
-      fontWeight: "600",
-      fontSize: "20px",
-    },
-    headerSubtitle: {
-      color: "rgba(144, 180, 148, 0.7)",
-      fontSize: "13px",
-    },
-    socialButtons: {
-      width: "100%",
-    },
-    socialButtonsIconButton: {
-      border: "1px solid rgba(144, 180, 148, 0.18)",
-      background: "rgba(15, 31, 17, 0.5)",
-      borderRadius: "8px",
-      transition: "background 0.18s ease",
-    },
-    socialButtonsIconButton__apple: {
-      color: "#F5F7F6",
-    },
-    socialButtonsIconButton__google: {},
-    socialButtonsIconButton__github: {
-      color: "#F5F7F6",
-    },
-    socialButtonsBlockButton: {
-      border: "1px solid rgba(144, 180, 148, 0.18)",
-      background: "rgba(15, 31, 17, 0.5)",
-      color: "#F5F7F6",
-      borderRadius: "8px",
-      transition: "background 0.18s ease",
-    },
-    socialButtonsBlockButtonText: {
-      color: "#F5F7F6",
-      fontWeight: "400",
-      fontSize: "13px",
-    },
+    rootBox: "inzu-clerk-root",
+    cardBox: "inzu-clerk-card-box",
+    card: "inzu-clerk-card",
+    header: "inzu-clerk-header",
+    headerTitle: "inzu-clerk-header-title",
+    headerSubtitle: "inzu-clerk-header-subtitle",
+
+    formField: "inzu-clerk-field",
+    formFieldLabel: "inzu-clerk-label",
+    formFieldInput: "inzu-clerk-input",
+    formFieldAction: "inzu-clerk-field-action",
+    formFieldErrorText: "inzu-clerk-field-action",
+    formFieldSuccessText: "inzu-clerk-field-action",
+    formFieldInputShowPasswordButton: "inzu-clerk-field-action",
+    formResendCodeLink: "inzu-clerk-field-action",
+    otpCodeFieldInput: "inzu-clerk-input",
+
+    formButtonPrimary: "inzu-clerk-primary-button",
+    formButtonReset: "inzu-clerk-field-action",
+
+    socialButtonsBlockButton: "inzu-clerk-social-button",
+    socialButtonsBlockButtonText: "inzu-clerk-social-text",
+    socialButtonsIconButton: "inzu-clerk-social-button",
+    alternativeMethodsBlockButton: "inzu-clerk-social-button",
     socialButtonsProviderIcon: {
+      // Boost visibility of monochrome provider marks on dark chassis
       filter: "brightness(1.8)",
     },
-    dividerLine: {
-      background: "rgba(144, 180, 148, 0.12)",
-    },
-    dividerText: {
-      color: "rgba(144, 180, 148, 0.4)",
-      fontSize: "11px",
-      letterSpacing: "0.06em",
-      textTransform: "uppercase",
-    },
-    formFieldLabel: {
-      color: "rgba(245, 247, 246, 0.5)",
-      fontSize: "11px",
-      letterSpacing: "0.06em",
-      textTransform: "uppercase",
-      fontWeight: "500",
-    },
-    formFieldInput: {
-      background: "#0f1f11",
-      border: "1px solid rgba(144, 180, 148, 0.18)",
-      color: "#F5F7F6",
-      borderRadius: "8px",
-      fontSize: "14px",
-      transition: "border-color 0.18s ease",
-    },
-    formFieldInput__identifier: {
-      background: "#0f1f11",
-    },
-    formFieldInput__password: {
-      background: "#0f1f11",
-    },
-    formFieldAction: {
-      color: "#90B494",
-      fontSize: "12px",
-    },
-    formFieldInputShowPasswordButton: {
-      color: "rgba(144, 180, 148, 0.6)",
-    },
-    formFieldErrorText: {
-      color: "#E22026",
-    },
-    formFieldSuccessText: {
-      color: "#90B494",
-    },
-    formButtonPrimary: {
-      background: "#32533D",
-      color: "#F5F7F6",
-      fontWeight: "500",
-      fontSize: "14px",
-      letterSpacing: "0.01em",
-      borderRadius: "8px",
-      boxShadow: "none",
-      transition: "background 0.18s ease",
-    },
-    formButtonReset: {
-      color: "#90B494",
-    },
+
+    dividerLine: "inzu-clerk-divider-line",
+    dividerText: "inzu-clerk-divider-text",
+
+    footer: "inzu-clerk-footer",
+    footerAction: "inzu-clerk-footer",
+    footerActionText: "inzu-clerk-footer-action-text",
+    footerActionLink: "inzu-clerk-footer-action-link",
+
     identityPreview: {
-      background: "rgba(15, 31, 17, 0.5)",
-      border: "1px solid rgba(144, 180, 148, 0.12)",
-      borderRadius: "8px",
+      background: "rgba(15, 31, 17, 0.4)",
+      border: "1px solid rgba(144, 180, 148, 0.14)",
+      borderRadius: "6px",
     },
-    identityPreviewText: {
-      color: "#F5F7F6",
-    },
-    identityPreviewEditButton: {
-      color: "#90B494",
-    },
-    formResendCodeLink: {
-      color: "#90B494",
-    },
-    otpCodeFieldInput: {
-      background: "#0f1f11",
-      border: "1px solid rgba(144, 180, 148, 0.18)",
-      color: "#F5F7F6",
-      borderRadius: "8px",
-    },
-    alternativeMethodsBlockButton: {
-      border: "1px solid rgba(144, 180, 148, 0.18)",
-      color: "#F5F7F6",
-      background: "rgba(15, 31, 17, 0.5)",
-      borderRadius: "8px",
-    },
-    footer: {
-      background: "rgba(15, 31, 17, 0.5)",
-      borderTop: "1px solid rgba(144, 180, 148, 0.08)",
-      borderRadius: "0 0 12px 12px",
-    },
-    footerAction: {
-      background: "transparent",
-    },
-    footerActionText: {
-      color: "rgba(144, 180, 148, 0.55)",
-      fontSize: "13px",
-    },
-    footerActionLink: {
-      color: "#90B494",
-      fontWeight: "500",
-      fontSize: "13px",
-    },
+    identityPreviewText: { color: "#F5F7F6" },
+    identityPreviewEditButton: "inzu-clerk-field-action",
+
     badge: {
       background: "rgba(50, 83, 61, 0.4)",
       color: "#90B494",
       border: "1px solid rgba(144, 180, 148, 0.2)",
     },
     alert: {
-      background: "rgba(226, 32, 38, 0.1)",
+      background: "rgba(226, 32, 38, 0.08)",
       border: "1px solid rgba(226, 32, 38, 0.2)",
-      borderRadius: "8px",
+      borderRadius: "6px",
     },
-    alertText: {
-      color: "#F5F7F6",
-    },
+    alertText: { color: "#F5F7F6" },
+
     selectButton: {
-      background: "#0f1f11",
-      border: "1px solid rgba(144, 180, 148, 0.18)",
+      background: "transparent",
+      border: "none",
+      borderBottom: "1px solid rgba(144, 180, 148, 0.18)",
       color: "#F5F7F6",
-      borderRadius: "8px",
+      borderRadius: 0,
     },
     selectOptionsContainer: {
       background: "#182d1a",
       border: "1px solid rgba(144, 180, 148, 0.15)",
-      borderRadius: "8px",
+      borderRadius: "6px",
     },
-    selectOption: {
-      color: "#F5F7F6",
-    },
-    modalCloseButton: {
-      color: "rgba(144, 180, 148, 0.6)",
-    },
-    backLink: {
-      color: "#90B494",
-    },
+    selectOption: { color: "#F5F7F6" },
+
+    modalCloseButton: { color: "rgba(144, 180, 148, 0.6)" },
+    backLink: "inzu-clerk-field-action",
   },
   layout: {
     unsafe_disableDevelopmentModeWarnings: true,
     socialButtonsPlacement: "top" as const,
-    socialButtonsVariant: "iconButton" as const,
+    socialButtonsVariant: "blockButton" as const,
   },
 };

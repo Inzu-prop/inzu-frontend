@@ -21,6 +21,7 @@ import {
   type ProfileRecord,
   dateLabel,
   money,
+  record,
   words,
 } from "@/lib/tenant-profile";
 
@@ -183,6 +184,16 @@ export function TenantProfileView({
     property._id ?? tenant.propertyId ?? unit.propertyId,
   );
   const unitId = words(unit._id ?? tenant.unitId);
+  const contacts = (
+    Array.isArray(tenant.emergencyContacts) ? tenant.emergencyContacts : []
+  )
+    .map(record)
+    .filter((contact) => contact.name || contact.phoneNumber || contact.email);
+  const documents = [
+    { name: "ID Document", url: tenant.idDocumentUrl },
+    { name: "Employment Document", url: tenant.employmentDocumentUrl },
+    ...(Array.isArray(tenant.documents) ? tenant.documents.map(record) : []),
+  ].filter((document) => /^https?:\/\//i.test(words(document.url)));
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -206,6 +217,11 @@ export function TenantProfileView({
           />
           <div>
             <h2 className="text-title-2-medium">{name}</h2>
+            {tenant.createdAt ? (
+              <p className="text-body-2-regular text-text-secondary">
+                Member since {dateLabel(tenant.createdAt)}
+              </p>
+            ) : null}
             <p className="text-body-2-regular text-text-secondary">
               {words(property.name) || "Property not recorded"}
               {unit.unitNumber ? ` · Unit ${words(unit.unitNumber)}` : ""}
@@ -240,8 +256,22 @@ export function TenantProfileView({
             <h3 className="text-headline-medium mb-5">Contact details</h3>
             <Fields
               values={[
-                ["Email", words(tenant.email)],
-                ["Phone", words(tenant.phoneNumber)],
+                [
+                  "Email",
+                  words(tenant.email) && (
+                    <a href={`mailto:${words(tenant.email)}`}>
+                      {words(tenant.email)}
+                    </a>
+                  ),
+                ],
+                [
+                  "Phone",
+                  words(tenant.phoneNumber) && (
+                    <a href={`tel:${words(tenant.phoneNumber)}`}>
+                      {words(tenant.phoneNumber)}
+                    </a>
+                  ),
+                ],
               ]}
             />
           </section>
@@ -284,6 +314,53 @@ export function TenantProfileView({
                 ["Required deposit", money(unit.depositAmount)],
               ]}
             />
+          </section>
+          <section className={panel}>
+            <h3 className="text-headline-medium mb-5">Emergency contacts</h3>
+            {contacts.length ? (
+              contacts.map((contact, index) => (
+                <div key={index} className="mb-4 last:mb-0">
+                  <Fields
+                    values={[
+                      ["Name", words(contact.name)],
+                      ["Relationship", words(contact.relationship)],
+                      ["Phone", words(contact.phoneNumber)],
+                      ["Email", words(contact.email)],
+                    ]}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-body-2-regular text-text-secondary">
+                No emergency contacts recorded.
+              </p>
+            )}
+          </section>
+          <section className={panel}>
+            <h3 className="text-headline-medium mb-5">Documents</h3>
+            {documents.length ? (
+              <ul className="flex flex-col gap-3">
+                {documents.map((document, index) => (
+                  <li key={index}>
+                    <ButtonLink
+                      variant="ghost"
+                      size="small"
+                      href={words(document.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {words(document.name) ||
+                        words((document as ProfileRecord).type) ||
+                        `Document ${index + 1}`}
+                    </ButtonLink>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-body-2-regular text-text-secondary">
+                No documents uploaded.
+              </p>
+            )}
           </section>
         </aside>
         <section className={panel}>

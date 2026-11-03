@@ -10,6 +10,7 @@ import { RequireOrganization } from "@/components/require-organization";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError } from "@/lib/api";
+import { dashboardSummary, paginationTotal } from "@/lib/dashboard-summary";
 import { monthKey, periodStart } from "@/lib/reporting";
 
 export default function DashboardClient() {
@@ -38,10 +39,21 @@ export default function DashboardClient() {
     Promise.all([
       api.dashboard.getSummary(),
       api.dashboard.getTrends({ from: fromMonth, to: monthKey(now) }),
+      api.properties.list({ limit: "1" }).catch(() => undefined),
+      api.tenants.list({ limit: "1" }).catch(() => undefined),
+      api.maintenance
+        .list({ limit: "1", status: "open" })
+        .catch(() => undefined),
     ])
-      .then(([result, trends]) => {
+      .then(([result, trends, properties, tenants, tickets]) => {
         if (!cancelled) {
-          setSummary(result as Summary);
+          setSummary(
+            dashboardSummary(result, {
+              totalProperties: paginationTotal(properties, "properties"),
+              totalTenants: paginationTotal(tenants, "tenants"),
+              openTickets: paginationTotal(tickets, "tickets"),
+            }),
+          );
           setMonthly((trends as { monthly?: MonthlyTrend[] }).monthly ?? []);
         }
       })
@@ -59,7 +71,14 @@ export default function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [api.dashboard, organizationId, retry]);
+  }, [
+    api.dashboard,
+    api.properties,
+    api.tenants,
+    api.maintenance,
+    organizationId,
+    retry,
+  ]);
 
   return (
     <RequireOrganization>

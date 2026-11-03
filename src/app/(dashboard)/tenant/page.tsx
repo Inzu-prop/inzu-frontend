@@ -22,6 +22,15 @@ function formatCurrency(amount: number | undefined, currency = ""): string {
   return `${currency ? currency + " " : ""}${Number(amount).toLocaleString()}`;
 }
 
+function toMpesaMsisdn(raw: string | undefined | null): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("254")) return digits;
+  if (digits.startsWith("0") && digits.length === 10) return `254${digits.slice(1)}`;
+  if (digits.startsWith("7") && digits.length === 9) return `254${digits}`;
+  return digits;
+}
+
 export default function TenantPortalPage() {
   const { data, refetch } = useTenantMe();
   const api = useInzuApi();
@@ -33,7 +42,7 @@ export default function TenantPortalPage() {
 
   const latestInvoice = recentInvoices[0] ?? null;
 
-  const tenantPhone = (data?.tenant?.phoneNumber as string | undefined) ?? "";
+  const tenantPhone = toMpesaMsisdn(data?.tenant?.phoneNumber as string | undefined);
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [mpesaStatus, setMpesaStatus] = useState<
     "idle" | "initiating" | "pending" | "success" | "failed" | "error"
