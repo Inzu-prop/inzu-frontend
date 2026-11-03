@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Chip } from "@/components/base/badges/chip";
 import { ButtonLink } from "@/components/base/buttons/button";
@@ -22,6 +23,7 @@ import {
   dateLabel,
   money,
   record,
+  recordId,
   tenantDocuments,
   words,
 } from "@/lib/tenant-profile";
@@ -50,9 +52,11 @@ function recordedFields(values: [string, ReactNode][]): [string, ReactNode][] {
 function History({
   kind,
   data,
+  demo,
 }: {
   kind: HistoryKind;
   data: ProfileHistory[HistoryKind];
+  demo: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -125,29 +129,44 @@ function History({
               : "No linked records returned for this tenant."
           }
         >
-          {rows.slice(currentPage * 6, currentPage * 6 + 6).map((r, i) => (
-            <TableRow key={words(r._id ?? r.id) || i}>
-              <TableCell>
-                {words(r.invoiceNumber ?? r.reference ?? r.title) ||
-                  (kind === "invoices"
-                    ? words(r.period) || "Rent invoice"
-                    : kind === "payments"
-                      ? words(r.method) || "Payment"
-                      : "Maintenance request")}
-              </TableCell>
-              <TableCell>{dateLabel(date(r))}</TableCell>
-              <TableCell>
-                {kind === "tickets"
-                  ? words(r.priority) || "Not recorded"
-                  : money(r.totalAmount ?? r.amount)}
-              </TableCell>
-              <TableCell>
-                <Chip color="soft" variant="caption">
-                  {words(r.status) || "Not recorded"}
-                </Chip>
-              </TableCell>
-            </TableRow>
-          ))}
+          {rows.slice(currentPage * 6, currentPage * 6 + 6).map((r, i) => {
+            const id = recordId(r);
+            const label =
+              words(r.invoiceNumber ?? r.reference ?? r.title) ||
+              (kind === "invoices"
+                ? words(r.period) || "Rent invoice"
+                : kind === "payments"
+                  ? words(r.method) || "Payment"
+                  : "Maintenance request");
+            const invoiceHref =
+              kind === "invoices" && id
+                ? `${demo ? "/preview" : ""}/invoices/${encodeURIComponent(id)}`
+                : "";
+            return (
+              <TableRow key={id || i}>
+                <TableCell>
+                  {invoiceHref ? (
+                    <ButtonLink href={invoiceHref} variant="ghost" size="xs">
+                      {label}
+                    </ButtonLink>
+                  ) : (
+                    label
+                  )}
+                </TableCell>
+                <TableCell>{dateLabel(date(r))}</TableCell>
+                <TableCell>
+                  {kind === "tickets"
+                    ? words(r.priority) || "Not recorded"
+                    : money(r.totalAmount ?? r.amount)}
+                </TableCell>
+                <TableCell>
+                  <Chip color="soft" variant="caption">
+                    {words(r.status) || "Not recorded"}
+                  </Chip>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       <Pagination
@@ -179,6 +198,17 @@ export function TenantProfileView({
   warning?: string;
   historyLoading?: boolean;
 }) {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const requestedHistoryKind: HistoryKind =
+    requestedTab === "payments" || requestedTab === "tickets"
+      ? requestedTab
+      : "invoices";
+  const [selectedHistoryKind, setSelectedHistoryKind] =
+    useState<HistoryKind>(requestedHistoryKind);
+  useEffect(() => {
+    setSelectedHistoryKind(requestedHistoryKind);
+  }, [requestedHistoryKind]);
   const name =
     words(tenant.name) ||
     [words(tenant.firstName), words(tenant.lastName)]
@@ -453,7 +483,18 @@ export function TenantProfileView({
           {historyLoading ? (
             <p role="status">Loading related records…</p>
           ) : (
-            <Tabs>
+            <Tabs
+              selectedKey={selectedHistoryKind}
+              onSelectionChange={(key) => {
+                const next = String(key);
+                if (
+                  next === "invoices" ||
+                  next === "payments" ||
+                  next === "tickets"
+                )
+                  setSelectedHistoryKind(next);
+              }}
+            >
               <TabList aria-label="Tenant history">
                 <Tab id="invoices">Invoices</Tab>
                 <Tab id="payments">Payments</Tab>
@@ -461,7 +502,7 @@ export function TenantProfileView({
               </TabList>
               {(["invoices", "payments", "tickets"] as const).map((kind) => (
                 <TabPanel id={kind} key={kind}>
-                  <History kind={kind} data={history[kind]} />
+                  <History kind={kind} data={history[kind]} demo={demo} />
                 </TabPanel>
               ))}
             </Tabs>

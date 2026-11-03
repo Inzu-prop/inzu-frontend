@@ -3,6 +3,7 @@
 import { ButtonLink } from "@/components/base/buttons/button";
 import Container from "@/components/container";
 import { TenantProfileView } from "@/components/tenant-profile-view";
+import { demoTenantInvoices } from "@/lib/demo-invoices";
 import { monthKey } from "@/lib/reporting";
 import { emptyHistory } from "@/lib/tenant-profile";
 
@@ -24,33 +25,20 @@ export function DemoTenantProfile({
   const rent = 24000 + (index % 3) * 4000;
   const history = emptyHistory();
   const current = monthKey(new Date());
-  for (let offset = 0; offset < 8; offset++) {
-    const d = new Date(`${current}-01T12:00:00Z`);
-    d.setUTCMonth(d.getUTCMonth() - offset);
-    const month = d.toISOString().slice(0, 7);
-    const invoiceId = `${id}-invoice-${month}`;
-    const paid = offset > 0 || index % 3 !== 0;
-    history.invoices.rows.push({
-      _id: invoiceId,
-      tenantId: id,
-      invoiceNumber: `DEMO-${index + 1}-${month}`,
-      period: month,
-      amount: rent,
-      dueDate: `${month}-05`,
-      status: paid ? "paid" : "pending",
-    });
-    if (paid)
+  history.invoices.rows = demoTenantInvoices(id, index, rent, current);
+  history.invoices.rows.forEach((invoice) => {
+    if (invoice.status === "paid")
       history.payments.rows.push({
-        _id: `${id}-payment-${month}`,
-        invoiceId,
+        _id: `${id}-payment-${invoice.period}`,
+        invoiceId: invoice._id,
         tenantId: id,
-        reference: `SAMPLE-${month}`,
+        reference: `SAMPLE-${invoice.period}`,
         amount: rent,
-        paidAt: `${month}-02`,
+        paidAt: `${invoice.period}-02`,
         method: "M-Pesa",
         status: "completed",
       });
-  }
+  });
   history.tickets.rows = [
     {
       _id: `${id}-ticket-1`,

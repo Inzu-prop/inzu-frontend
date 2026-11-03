@@ -16,10 +16,12 @@ import { Input } from "@/components/base/input/input";
 import Container from "@/components/container";
 import { DashboardView } from "@/components/dashboard-view";
 import { DemoTenantProfile } from "@/components/demo-tenant-profile";
+import { InvoiceDetailView } from "@/components/invoice-detail-view";
 import { InzuBrand } from "@/components/inzu-brand";
 import { inzuNavigation } from "@/components/nav/side-nav";
 import { ReportsView } from "@/components/reports-view";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { demoInvoiceById } from "@/lib/demo-invoices";
 import { monthKey } from "@/lib/reporting";
 
 type Property = { id: string; name: string; location: string; units: number };
@@ -65,6 +67,7 @@ export function LocalPreview() {
   const section =
     pathname.replace(/^\/preview\/?/, "").split("/")[0] || "overview";
   const isNewProperty = pathname === "/preview/properties/new";
+  const detailId = pathname.split("/")[3] ?? "";
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [ready, setReady] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -211,6 +214,10 @@ export function LocalPreview() {
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  const previewInvoice =
+    section === "invoices" && detailId
+      ? demoInvoiceById(detailId, sampleNames)
+      : undefined;
 
   return (
     <div className="bg-background-full text-text-primary flex min-h-dvh">
@@ -275,12 +282,31 @@ export function LocalPreview() {
             />
           </Container>
         )}
-        {section === "tenants" && pathname.split("/")[3] ? (
-          <DemoTenantProfile
-            key={pathname}
-            id={pathname.split("/")[3]}
-            names={sampleNames}
-          />
+        {section === "tenants" && detailId ? (
+          <DemoTenantProfile key={pathname} id={detailId} names={sampleNames} />
+        ) : section === "invoices" && detailId ? (
+          <Container className="py-5">
+            {previewInvoice ? (
+              <InvoiceDetailView
+                invoice={previewInvoice}
+                backHref={
+                  previewInvoice.tenantId
+                    ? `/preview/tenants/${encodeURIComponent(previewInvoice.tenantId)}?tab=invoices`
+                    : "/preview/invoices"
+                }
+                preview
+              />
+            ) : (
+              <div className="flex flex-col items-start gap-3">
+                <p className="text-body-regular text-text-secondary">
+                  Sample invoice not found.
+                </p>
+                <ButtonLink href="/preview/invoices" variant="secondary">
+                  Back to invoices
+                </ButtonLink>
+              </div>
+            )}
+          </Container>
         ) : section === "reports" ? (
           <ReportsView monthly={monthly} />
         ) : section === "overview" ? (
@@ -435,6 +461,13 @@ export function LocalPreview() {
                           href={`/preview/tenants/${record.id}`}
                         >
                           View profile
+                        </ButtonLink>
+                      ) : section === "invoices" ? (
+                        <ButtonLink
+                          variant="secondary"
+                          href={`/preview/invoices/${encodeURIComponent(record.id)}`}
+                        >
+                          View invoice
                         </ButtonLink>
                       ) : (
                         <Button
