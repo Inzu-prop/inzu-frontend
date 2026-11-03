@@ -18,10 +18,12 @@ import { DashboardView } from "@/components/dashboard-view";
 import { DemoTenantProfile } from "@/components/demo-tenant-profile";
 import { InvoiceDetailView } from "@/components/invoice-detail-view";
 import { InzuBrand } from "@/components/inzu-brand";
+import { MaintenanceDetailView } from "@/components/maintenance-detail-view";
 import { inzuNavigation } from "@/components/nav/side-nav";
 import { ReportsView } from "@/components/reports-view";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { demoInvoiceById } from "@/lib/demo-invoices";
+import { demoTicketById } from "@/lib/maintenance-detail";
 import { monthKey } from "@/lib/reporting";
 
 type Property = { id: string; name: string; location: string; units: number };
@@ -218,6 +220,10 @@ export function LocalPreview() {
     section === "invoices" && detailId
       ? demoInvoiceById(detailId, sampleNames)
       : undefined;
+  const previewTicket =
+    section === "maintenance" && detailId
+      ? demoTicketById(detailId, sampleNames)
+      : undefined;
 
   return (
     <div className="bg-background-full text-text-primary flex min-h-dvh">
@@ -303,6 +309,29 @@ export function LocalPreview() {
                 </p>
                 <ButtonLink href="/preview/invoices" variant="secondary">
                   Back to invoices
+                </ButtonLink>
+              </div>
+            )}
+          </Container>
+        ) : section === "maintenance" && detailId ? (
+          <Container className="py-5">
+            {previewTicket ? (
+              <MaintenanceDetailView
+                ticket={previewTicket}
+                preview
+                backHref={
+                  typeof previewTicket.tenantId === "string"
+                    ? `/preview/tenants/${encodeURIComponent(previewTicket.tenantId)}?tab=tickets`
+                    : "/preview/maintenance"
+                }
+              />
+            ) : (
+              <div className="flex flex-col items-start gap-3">
+                <p className="text-body-regular text-text-secondary">
+                  Sample request not found.
+                </p>
+                <ButtonLink href="/preview/maintenance" variant="secondary">
+                  Back to maintenance
                 </ButtonLink>
               </div>
             )}
@@ -468,6 +497,13 @@ export function LocalPreview() {
                           href={`/preview/invoices/${encodeURIComponent(record.id)}`}
                         >
                           View invoice
+                        </ButtonLink>
+                      ) : section === "maintenance" ? (
+                        <ButtonLink
+                          variant="secondary"
+                          href={`/preview/maintenance/${encodeURIComponent(record.id)}`}
+                        >
+                          View details
                         </ButtonLink>
                       ) : (
                         <Button

@@ -144,12 +144,20 @@ function History({
               kind === "invoices" && id
                 ? `${demo ? "/preview" : ""}/invoices/${encodeURIComponent(id)}`
                 : "";
+            const ticketHref =
+              kind === "tickets" && id
+                ? `${demo ? "/preview" : ""}/maintenance/${encodeURIComponent(id)}`
+                : "";
             return (
               <TableRow key={id || i}>
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    {invoiceHref ? (
-                      <ButtonLink href={invoiceHref} variant="ghost" size="xs">
+                    {invoiceHref || ticketHref ? (
+                      <ButtonLink
+                        href={invoiceHref || ticketHref}
+                        variant="ghost"
+                        size="xs"
+                      >
                         {label}
                       </ButtonLink>
                     ) : (

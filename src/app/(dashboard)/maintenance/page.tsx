@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/base/buttons/button";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
 import { SkeletonList } from "@/components/inzu-skeleton";
@@ -162,14 +163,14 @@ export default function MaintenancePage() {
         {!loading && !error && data && data.length > 0 && (
           <ul style={{ borderRadius: 12, border: "1px solid rgba(144,180,148,0.10)", overflow: "hidden" }}>
             {data.map((ticket) => {
-              const id = ticket.id ?? ticket._id ?? String(Math.random());
+              const id = ticket._id ?? ticket.id;
               const priorityKey = (ticket.priority?.toLowerCase() ?? "medium") as Priority;
               const statusKey = ticket.status?.toLowerCase() ?? "open";
               const priorityStyle = PRIORITY_STYLE[priorityKey] ?? PRIORITY_STYLE.medium;
               const statusStyle = STATUS_STYLE[statusKey] ?? STATUS_STYLE.open;
 
               return (
-                <li key={id} className="inzu-row flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+                <li key={id ?? ticket.title} className="inzu-row flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">{ticket.title ?? "Untitled"}</span>
@@ -186,7 +187,10 @@ export default function MaintenancePage() {
                       )}
                     </div>
                   </div>
-                  <Chip label={ticket.status ?? "open"} style={statusStyle} />
+                  <div className="flex items-center gap-3">
+                    <Chip label={ticket.status ?? "open"} style={statusStyle} />
+                    {id && <ButtonLink href={`/maintenance/${encodeURIComponent(id)}`} variant="secondary" size="small">View details</ButtonLink>}
+                  </div>
                 </li>
               );
             })}
