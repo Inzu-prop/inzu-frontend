@@ -3,14 +3,17 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type { DateRange } from "react-day-picker";
 import { averageTicketsCreated } from "@/data/average-tickets-created";
-import type { TicketMetric } from "@/types/types";
 import { sidebarPreferenceStorage } from "@/lib/sidebar-preference";
+import type { TicketMetric } from "@/types/types";
 
 /** Optional override: when set, API client uses this org ID instead of Clerk's active organization (e.g. for org switcher). */
 export const selectedOrganizationIdAtom = atom<string | null>(null);
 
 /** Controls whether the mobile nav drawer is open. */
 export const mobileNavOpenAtom = atom(false);
+
+/** One search dialog shared by the global shortcut and Overview action. */
+export const commandPaletteOpenAtom = atom(false);
 
 /** Controls whether the desktop sidebar is expanded (true) or icon-only (false). */
 export const desktopSidebarExpandedAtom = atom(false);

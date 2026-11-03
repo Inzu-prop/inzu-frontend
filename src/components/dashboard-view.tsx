@@ -1,5 +1,6 @@
 "use client";
 
+import { useSetAtom } from "jotai";
 import Link from "next/link";
 import {
   RiAddLine,
@@ -12,6 +13,7 @@ import {
   RiMoneyDollarCircleLine,
   RiPieChartLine,
   RiRefreshLine,
+  RiSearchLine,
   RiToolsLine,
 } from "@remixicon/react";
 import { RevenueChartCard } from "@/components/application/dashboard/revenue-chart-card";
@@ -22,6 +24,7 @@ import {
 import { Button, ButtonLink } from "@/components/base/buttons/button";
 import { ProgressBar } from "@/components/base/progress/progress";
 import Container from "@/components/container";
+import { commandPaletteOpenAtom } from "@/lib/atoms";
 import { type TrendMonth, monthLabel, trendMonthKey } from "@/lib/reporting";
 
 export type MonthlyTrend = TrendMonth;
@@ -56,6 +59,7 @@ export function DashboardView({
   onRetry?: () => void;
   basePath?: string;
 }) {
+  const openSearch = useSetAtom(commandPaletteOpenAtom);
   const href = (path: string) => `${basePath}${path}`;
   const collected = summary?.totalCollected ?? 0;
   const expected = summary?.totalExpected ?? 0;
@@ -121,6 +125,14 @@ export function DashboardView({
             / All properties
           </p>
           <div className="flex gap-2">
+            <Button
+              size="small"
+              variant="secondary"
+              leadingIcon={RiSearchLine}
+              onClick={() => openSearch(true)}
+            >
+              Search
+            </Button>
             <ButtonLink
               size="small"
               href={href("/reports")}

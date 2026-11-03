@@ -1,217 +1,242 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useAtom } from "jotai";
+import { usePathname, useRouter } from "next/navigation";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
+import { RiArrowRightUpLine, RiSearchLine } from "@remixicon/react";
+import { InputBase, TextField } from "@/components/base/input/input";
+import { Kbd } from "@/components/base/kbd/kbd";
+import {
+  ScrollFade,
+  useScrollFade,
+} from "@/components/foundations/scroll-fade/scroll-fade";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { navigations } from "@/config/site";
+import { commandPaletteOpenAtom } from "@/lib/atoms";
+import { isPreviewPath } from "@/lib/local-preview.mjs";
+import { cx } from "@/utils/cx";
 
-type Item = {
+type SearchItem = {
   name: string;
   href: string;
   keywords?: string;
+  group: "Pages" | "Quick actions";
 };
 
-const ALL_ITEMS: Item[] = [
-  ...navigations.map((n) => ({ name: n.name, href: n.href })),
-  { name: "Add property", href: "/properties/new", keywords: "new create" },
-];
+function previewHref(path: string, preview: boolean) {
+  if (!preview) return path;
+  return path === "/" ? "/preview" : `/preview${path}`;
+}
 
 export function CommandPalette() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const [open, setOpen] = useAtom(commandPaletteOpenAtom);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+  const {
+    progress: scrollFadeProgress,
+    onScroll: onResultsScroll,
+    reset: resetScrollFade,
+  } = useScrollFade();
+  const preview = isPreviewPath(pathname);
+  const items = useMemo<SearchItem[]>(
+    () => [
+      ...navigations.map((item) => ({
+        name: item.name,
+        href: previewHref(item.href, preview),
+        group: "Pages" as const,
+      })),
+      ...(!preview
+        ? [
+            {
+              name: "Add property",
+              href: "/properties/new",
+              keywords: "new create building",
+              group: "Quick actions" as const,
+            },
+          ]
+        : []),
+    ],
+    [preview],
+  );
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filtered = items.filter(
+    (item) =>
+      !normalizedQuery ||
+      item.name.toLocaleLowerCase().includes(normalizedQuery) ||
+      item.keywords?.toLocaleLowerCase().includes(normalizedQuery),
+  );
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
 
-  /* Open on Ctrl+K / Cmd+K */
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen((prev) => !prev);
+    const onKey = (event: KeyboardEvent) => {
+      if (
+        !event.repeat &&
+        event.key.toLocaleLowerCase() === "k" &&
+        (event.ctrlKey || event.metaKey)
+      ) {
+        event.preventDefault();
+        setOpen((current) => !current);
       }
-    }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [setOpen]);
 
-  /* Reset on open */
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setActiveIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [open]);
+    if (!open) return;
+    setQuery("");
+    setActiveIndex(0);
+    resetScrollFade();
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, resetScrollFade]);
 
-  const filtered = ALL_ITEMS.filter((item) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
-      item.name.toLowerCase().includes(q) ||
-      (item.keywords ?? "").toLowerCase().includes(q)
+  useEffect(() => {
+    setActiveIndex((current) =>
+      Math.min(current, Math.max(0, filtered.length - 1)),
     );
-  });
-
-  /* Keep activeIndex in bounds */
-  useEffect(() => {
-    setActiveIndex((i) => Math.min(i, Math.max(0, filtered.length - 1)));
   }, [filtered.length]);
+
+  useEffect(() => {
+    const active = listRef.current?.querySelector<HTMLElement>(
+      `[data-search-index="${activeIndex}"]`,
+    );
+    active?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
 
   function navigate(href: string) {
     setOpen(false);
     router.push(href);
   }
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (filtered[activeIndex]) navigate(filtered[activeIndex].href);
-    }
-  }
-
-  /* Scroll active item into view */
-  useEffect(() => {
-    const el = listRef.current?.children[activeIndex] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        className="p-0 overflow-hidden"
-        style={{
-          maxWidth: 520,
-          background: "rgba(19,39,13,0.96)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(144,180,148,0.15)",
-          borderRadius: 16,
-          boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
-        }}
-      >
-        {/* Search input */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "12px 16px",
-            borderBottom: "1px solid rgba(144,180,148,0.10)",
-          }}
-        >
-          <svg
-            width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="rgba(144,180,148,0.5)" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round"
-            style={{ flexShrink: 0 }}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            ref={inputRef}
+      <DialogContent className="border-border-button-default bg-background-primary-default max-w-xl gap-0 overflow-hidden rounded-3xl border p-0 shadow-xl">
+        <div className="border-separator-border flex flex-col gap-2 border-b p-4 pe-12">
+          <DialogTitle className="text-headline-medium text-text-primary">
+            Search
+          </DialogTitle>
+          <DialogDescription className="text-body-2-regular text-text-tertiary">
+            Search currently covers pages and quick actions.
+          </DialogDescription>
+          <TextField
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
-            onKeyDown={onKeyDown}
-            placeholder="Go to…"
-            style={{
-              flex: 1, background: "none", border: "none", outline: "none",
-              fontSize: 14, color: "rgba(245,247,246,0.9)",
-              caretColor: "#90B494",
-            }}
-          />
-          <kbd
-            style={{
-              fontSize: 10, color: "rgba(245,247,246,0.3)",
-              background: "rgba(144,180,148,0.07)",
-              border: "1px solid rgba(144,180,148,0.12)",
-              borderRadius: 5, padding: "2px 6px", letterSpacing: "0.04em",
+            onChange={(value) => {
+              setQuery(value);
+              setActiveIndex(0);
+              listRef.current?.scrollTo({ top: 0 });
+              resetScrollFade();
             }}
           >
-            ESC
-          </kbd>
+            <InputBase
+              ref={inputRef}
+              role="combobox"
+              aria-label="Search pages and quick actions"
+              aria-controls={listboxId}
+              aria-expanded={open}
+              aria-autocomplete="list"
+              aria-activedescendant={
+                filtered.length ? optionId(activeIndex) : undefined
+              }
+              placeholder="Search pages and quick actions"
+              leadingIcon={RiSearchLine}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setActiveIndex((current) =>
+                    filtered.length
+                      ? Math.min(current + 1, filtered.length - 1)
+                      : 0,
+                  );
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setActiveIndex((current) => Math.max(current - 1, 0));
+                } else if (event.key === "Enter" && filtered[activeIndex]) {
+                  event.preventDefault();
+                  navigate(filtered[activeIndex].href);
+                }
+              }}
+            />
+          </TextField>
         </div>
 
-        {/* Results */}
-        <ul
-          ref={listRef}
-          style={{ maxHeight: 320, overflowY: "auto", padding: "6px 8px" }}
-        >
-          {filtered.length === 0 ? (
-            <li
-              style={{
-                padding: "24px 12px", textAlign: "center",
-                fontSize: 13, color: "rgba(245,247,246,0.3)",
-              }}
-            >
-              No results
-            </li>
-          ) : (
-            filtered.map((item, i) => (
-              <li key={item.href}>
-                <button
-                  onClick={() => navigate(item.href)}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  style={{
-                    width: "100%", textAlign: "left",
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "9px 12px", borderRadius: 9, border: "none",
-                    cursor: "pointer", fontSize: 13, fontWeight: 400,
-                    transition: "background 120ms ease",
-                    background: i === activeIndex
-                      ? "rgba(144,180,148,0.12)"
-                      : "transparent",
-                    color: i === activeIndex
-                      ? "rgba(245,247,246,0.95)"
-                      : "rgba(245,247,246,0.6)",
-                  }}
-                >
-                  {item.name}
-                  {i === activeIndex && (
-                    <kbd
-                      style={{
-                        fontSize: 10, color: "rgba(245,247,246,0.3)",
-                        background: "rgba(144,180,148,0.07)",
-                        border: "1px solid rgba(144,180,148,0.12)",
-                        borderRadius: 5, padding: "2px 6px",
-                      }}
+        <div className="relative min-h-0">
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label="Search results"
+            ref={listRef}
+            onScroll={onResultsScroll}
+            className="max-h-80 overflow-y-auto p-2 [scrollbar-width:thin]"
+          >
+            {filtered.length ? (
+              filtered.map((item, index) => {
+                const previous = filtered[index - 1];
+                const showGroup = previous?.group !== item.group;
+                return (
+                  <Fragment key={`${item.group}:${item.href}`}>
+                    {showGroup && (
+                      <p
+                        role="presentation"
+                        className="text-caption-1-semibold text-text-tertiary px-3 pb-1 pt-2"
+                      >
+                        {item.group}
+                      </p>
+                    )}
+                    <button
+                      id={optionId(index)}
+                      role="option"
+                      aria-selected={index === activeIndex}
+                      tabIndex={-1}
+                      type="button"
+                      data-search-index={index}
+                      onClick={() => navigate(item.href)}
+                      onPointerMove={() => setActiveIndex(index)}
+                      className={cx(
+                        "focus-visible:ring-border-focus-ring flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 text-start outline-none focus-visible:ring-2",
+                        index === activeIndex
+                          ? "bg-background-tertiary-hover text-text-primary"
+                          : "text-text-secondary hover:bg-background-tertiary-default",
+                      )}
                     >
-                      ↵
-                    </kbd>
-                  )}
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
+                      <span className="text-body-medium">{item.name}</span>
+                      <RiArrowRightUpLine
+                        className="text-foreground-icon-tertiary size-4 shrink-0"
+                        aria-hidden
+                      />
+                    </button>
+                  </Fragment>
+                );
+              })
+            ) : (
+              <p className="text-body-regular text-text-tertiary px-3 py-8 text-center">
+                No matching pages or actions.
+              </p>
+            )}
+          </div>
+          <ScrollFade progress={scrollFadeProgress} />
+        </div>
 
-        {/* Footer hint */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(144,180,148,0.08)",
-            padding: "8px 16px",
-            display: "flex", gap: 12, alignItems: "center",
-          }}
-        >
-          {[["↑↓", "navigate"], ["↵", "open"], ["esc", "close"]].map(([key, label]) => (
-            <span key={key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <kbd style={{
-                fontSize: 10, color: "rgba(245,247,246,0.35)",
-                background: "rgba(144,180,148,0.07)",
-                border: "1px solid rgba(144,180,148,0.12)",
-                borderRadius: 5, padding: "2px 6px",
-              }}>{key}</kbd>
-              <span style={{ fontSize: 11, color: "rgba(245,247,246,0.25)" }}>{label}</span>
-            </span>
-          ))}
+        <div className="border-separator-border text-caption-1-regular text-text-tertiary flex items-center gap-3 border-t px-4 py-3">
+          <span className="flex items-center gap-1.5">
+            <Kbd>↑↓</Kbd> navigate
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Kbd>↵</Kbd> open
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Kbd>Esc</Kbd> close
+          </span>
         </div>
       </DialogContent>
     </Dialog>

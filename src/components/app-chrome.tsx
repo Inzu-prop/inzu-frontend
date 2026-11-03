@@ -13,7 +13,12 @@ const AUTH_PATHS = ["/sign-in", "/sign-up"];
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   if (isLocalPreviewEnabled() && isPreviewPath(pathname))
-    return <>{children}</>;
+    return (
+      <>
+        <CommandPalette />
+        {children}
+      </>
+    );
   return <AuthenticatedChrome>{children}</AuthenticatedChrome>;
 }
 
