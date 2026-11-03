@@ -5,6 +5,7 @@ import type {
   ReactNode,
   Ref,
 } from "react";
+import Link from "next/link";
 import { cx, sortCx } from "@/utils/cx";
 import { directionalIconClass } from "@/utils/directional-icon";
 
@@ -190,18 +191,8 @@ export function ButtonLink({
   ref,
   ...props
 }: ButtonLinkProps) {
-  return (
-    <a
-      ref={ref}
-      className={cx(
-        styles.base,
-        styles.size[size],
-        styles.variant[variant],
-        iconOnly && styles.iconOnlySize[size],
-        className,
-      )}
-      {...props}
-    >
+  const content = (
+    <>
       {Leading ? <Leading className={cx(styles.icon[size], directionalIconClass(Leading))} aria-hidden /> : null}
       {!iconOnly && children !== undefined && children !== null && (
         <span className={styles.label[size]}>{children}</span>
@@ -209,6 +200,32 @@ export function ButtonLink({
       {!iconOnly && Trailing ? (
         <Trailing className={cx(styles.icon[size], directionalIconClass(Trailing))} aria-hidden />
       ) : null}
+    </>
+  );
+  const linkClassName = cx(
+    styles.base,
+    styles.size[size],
+    styles.variant[variant],
+    iconOnly && styles.iconOnlySize[size],
+    className,
+  );
+  const href = props.href;
+  const isInternalNavigation =
+    typeof href === "string" &&
+    href.startsWith("/") &&
+    !href.startsWith("//") &&
+    props.download === undefined &&
+    props.target !== "_blank";
+  if (isInternalNavigation) {
+    return (
+      <Link ref={ref} className={linkClassName} {...props} href={href}>
+        {content}
+      </Link>
+    );
+  }
+  return (
+    <a ref={ref} className={linkClassName} {...props}>
+      {content}
     </a>
   );
 }

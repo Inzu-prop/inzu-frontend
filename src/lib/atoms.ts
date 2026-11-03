@@ -4,6 +4,7 @@ import { atomWithStorage } from "jotai/utils";
 import type { DateRange } from "react-day-picker";
 import { averageTicketsCreated } from "@/data/average-tickets-created";
 import type { TicketMetric } from "@/types/types";
+import { sidebarPreferenceStorage } from "@/lib/sidebar-preference";
 
 /** Optional override: when set, API client uses this org ID instead of Clerk's active organization (e.g. for org switcher). */
 export const selectedOrganizationIdAtom = atom<string | null>(null);
@@ -53,4 +54,8 @@ export const ticketChartDataAtom = atom((get) => {
 });
 
 /** Shared across route changes; persisted only when the user toggles it. */
-export const sidebarCollapsedAtom = atomWithStorage("inzu:sidebar-collapsed", false);
+export const sidebarCollapsedAtom = atomWithStorage(
+  "inzu:sidebar-collapsed",
+  false,
+  sidebarPreferenceStorage,
+);
