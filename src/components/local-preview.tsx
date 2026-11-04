@@ -19,6 +19,7 @@ import { DemoTenantProfile } from "@/components/demo-tenant-profile";
 import { InvoiceDetailView } from "@/components/invoice-detail-view";
 import { InzuBrand } from "@/components/inzu-brand";
 import { MaintenanceDetailView } from "@/components/maintenance-detail-view";
+import { PropertySummary } from "@/components/property-summary";
 import { inzuNavigation } from "@/components/nav/side-nav";
 import { ReportsView } from "@/components/reports-view";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -79,6 +80,7 @@ export function LocalPreview() {
   const [units, setUnits] = useState("4");
   const [notice, setNotice] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingProperty, setEditingProperty] = useState(false);
   useEffect(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
@@ -113,6 +115,7 @@ export function LocalPreview() {
     setMobileOpen(false);
     setQuery("");
     setExpanded(null);
+    setEditingProperty(false);
   }, [pathname]);
   const totalUnits = properties.reduce((sum, p) => sum + p.units, 0);
   const currentMonth = Number(monthKey().slice(5));
@@ -224,6 +227,9 @@ export function LocalPreview() {
     section === "maintenance" && detailId
       ? demoTicketById(detailId, sampleNames)
       : undefined;
+  const previewProperty = section === "properties" && detailId && !isNewProperty
+    ? properties.find((property) => encodeURIComponent(property.id) === detailId || property.id === detailId)
+    : undefined;
 
   return (
     <div className="bg-background-full text-text-primary flex min-h-dvh">
@@ -335,6 +341,38 @@ export function LocalPreview() {
                 </ButtonLink>
               </div>
             )}
+          </Container>
+        ) : section === "properties" && detailId && !isNewProperty ? (
+          <Container className="flex flex-col gap-4 py-5">
+            <div><ButtonLink href="/preview/properties" variant="ghost" size="small">← Properties</ButtonLink></div>
+            {!ready ? <p role="status">Loading sample property…</p> : previewProperty ? (
+              <>
+                <header>
+                  <h2 className="text-title-2-medium">{previewProperty.name}</h2>
+                  <p className="text-body-regular text-text-secondary">{previewProperty.location} · Fictional preview</p>
+                </header>
+                <PropertySummary totalUnits={previewProperty.units} />
+                {editingProperty ? (
+                  <form className="border-border-button-default bg-background-primary-default flex max-w-xl flex-col gap-4 rounded-3xl border p-5" onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!location.trim()) return;
+                    setProperties((current) => current.map((item) => item.id === previewProperty.id ? { ...item, location: location.trim() } : item));
+                    setEditingProperty(false);
+                    setNotice("Sample property updated in this browser tab.");
+                  }}>
+                    <Input label="Location" value={location} onChange={setLocation} isRequired maxLength={120} />
+                    <div className="flex gap-3"><Button type="submit">Save sample property</Button><Button type="button" variant="secondary" onClick={() => setEditingProperty(false)}>Cancel</Button></div>
+                  </form>
+                ) : <section className={card}>
+                  <h3 className="text-headline-medium">Property details</h3>
+                  <p className="text-body-regular text-text-secondary mt-3">{previewProperty.units} sample units are recorded for this property. Additional details have not been recorded.</p>
+                  <Button className="mt-4" variant="secondary" onClick={() => {
+                    setLocation(previewProperty.location);
+                    setEditingProperty(true);
+                  }}>Edit sample property</Button>
+                </section>}
+              </>
+            ) : <p className="text-body-regular text-text-secondary">Sample property not found.</p>}
           </Container>
         ) : section === "reports" ? (
           <ReportsView monthly={monthly} />
@@ -484,7 +522,11 @@ export function LocalPreview() {
                       <p className="text-body-regular text-text-secondary my-3">
                         {record.detail}
                       </p>
-                      {section === "tenants" ? (
+                      {section === "properties" ? (
+                        <ButtonLink variant="secondary" href={`/preview/properties/${encodeURIComponent(record.id)}`}>
+                          View property
+                        </ButtonLink>
+                      ) : section === "tenants" ? (
                         <ButtonLink
                           variant="secondary"
                           href={`/preview/tenants/${record.id}`}

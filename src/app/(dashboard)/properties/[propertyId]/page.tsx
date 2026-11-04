@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/base/input/input";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
+import { PropertySummary } from "@/components/property-summary";
 import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import type { Property, PropertyStatus, PropertyType, UpdatePropertyBody } from "@/lib/api";
 import { ApiError } from "@/lib/api";
+import { assertNotCleared, parsePropertyInteger, parsePropertyValue } from "@/lib/property-edit";
 
 const STATUS_STYLES: Record<PropertyStatus, string> = {
   active: "bg-[#90B494]/20 text-[#32533D] dark:bg-[#90B494]/15 dark:text-[#90B494]",
@@ -36,10 +39,6 @@ const TYPE_LABELS: Record<PropertyType, string> = {
 const PROPERTY_TYPES: PropertyType[] = ["apartment", "house", "commercial", "mixed_use", "land"];
 const PROPERTY_STATUSES: PropertyStatus[] = ["active", "inactive", "under_construction", "for_sale"];
 
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(n);
-}
-
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <>
@@ -54,10 +53,18 @@ const inputCls =
 
 export default function PropertyDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { organizationId } = useCurrentOrganizationId();
+  const propertyId = String(params.propertyId);
+  return (
+    <RequireOrganization>
+      {organizationId && <PropertyDetail key={`${organizationId}:${propertyId}`} organizationId={organizationId} propertyId={propertyId} />}
+    </RequireOrganization>
+  );
+}
+
+function PropertyDetail({ organizationId, propertyId }: { organizationId: string; propertyId: string }) {
+  const router = useRouter();
   const api = useInzuApi();
-  const propertyId = params.propertyId as string;
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,6 +83,8 @@ export default function PropertyDetailPage() {
   const [editYearBuilt, setEditYearBuilt] = useState("");
   const [editFloors, setEditFloors] = useState("");
   const [editTotalUnits, setEditTotalUnits] = useState("");
+  const [editPurchasePrice, setEditPurchasePrice] = useState("");
+  const [editCurrentValue, setEditCurrentValue] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -84,14 +93,18 @@ export default function PropertyDetailPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (!organizationId || !propertyId) { setLoading(false); return; }
+    let active = true;
     setLoading(true);
     setError(null);
     api.properties
       .get(propertyId)
-      .then((res) => setProperty(res.property))
-      .catch((err) => setError(err instanceof ApiError ? err.message : String(err)))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!res.property || res.property._id !== propertyId) throw new Error("The property response did not match the requested property.");
+        if (active) setProperty(res.property);
+      })
+      .catch((err) => { if (active) setError(err instanceof ApiError ? err.message : String(err)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [api.properties, organizationId, propertyId]);
 
   function startEdit() {
@@ -107,6 +120,8 @@ export default function PropertyDetailPage() {
     setEditYearBuilt(property.yearBuilt != null ? String(property.yearBuilt) : "");
     setEditFloors(property.totalFloors != null ? String(property.totalFloors) : "");
     setEditTotalUnits(property.totalUnits != null ? String(property.totalUnits) : "");
+    setEditPurchasePrice(property.purchasePrice != null ? String(property.purchasePrice) : "");
+    setEditCurrentValue(property.currentValue != null ? String(property.currentValue) : "");
     setEditNotes(property.notes ?? "");
     setEditError(null);
     setEditing(true);
@@ -117,6 +132,33 @@ export default function PropertyDetailPage() {
     if (!editName.trim()) { setEditError("Name is required."); return; }
     if (!editCity.trim()) { setEditError("City is required."); return; }
     if (!editCountry.trim()) { setEditError("Country is required."); return; }
+    if (!property) return;
+    let purchasePrice: number | undefined;
+    let currentValue: number | undefined;
+    let yearBuilt: number | undefined;
+    let totalFloors: number | undefined;
+    let totalUnits: number | undefined;
+    try {
+      for (const [value, previous, label] of [
+        [editStreet, property.address.street, "Street"],
+        [editState, property.address.state, "State / county"],
+        [editPostal, property.address.postalCode, "Postal code"],
+        [editYearBuilt, property.yearBuilt, "Year built"],
+        [editFloors, property.totalFloors, "Floors"],
+        [editTotalUnits, property.totalUnits, "Total units"],
+        [editPurchasePrice, property.purchasePrice, "Purchase price"],
+        [editCurrentValue, property.currentValue, "Current value"],
+        [editNotes, property.notes, "Notes"],
+      ] as const) assertNotCleared(value, previous, label);
+      purchasePrice = parsePropertyValue(editPurchasePrice, "Purchase price");
+      currentValue = parsePropertyValue(editCurrentValue, "Current value");
+      yearBuilt = parsePropertyInteger(editYearBuilt, "Year built", 1800, 2100);
+      totalFloors = parsePropertyInteger(editFloors, "Floors", 0, Number.MAX_SAFE_INTEGER);
+      totalUnits = parsePropertyInteger(editTotalUnits, "Total units", 0, Number.MAX_SAFE_INTEGER);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Check the property values.");
+      return;
+    }
     setEditSubmitting(true);
     setEditError(null);
     const body: UpdatePropertyBody = {
@@ -124,15 +166,18 @@ export default function PropertyDetailPage() {
       type: editType,
       status: editStatus,
       address: {
+        ...property.address,
         city: editCity.trim(),
         country: editCountry.trim(),
         ...(editStreet.trim() && { street: editStreet.trim() }),
         ...(editState.trim() && { state: editState.trim() }),
         ...(editPostal.trim() && { postalCode: editPostal.trim() }),
       },
-      ...(editYearBuilt.trim() !== "" && { yearBuilt: parseInt(editYearBuilt, 10) }),
-      ...(editFloors.trim() !== "" && { totalFloors: parseInt(editFloors, 10) }),
-      ...(editTotalUnits.trim() !== "" && { totalUnits: parseInt(editTotalUnits, 10) }),
+      ...(yearBuilt !== undefined && { yearBuilt }),
+      ...(totalFloors !== undefined && { totalFloors }),
+      ...(totalUnits !== undefined && { totalUnits }),
+      ...(purchasePrice !== undefined && { purchasePrice }),
+      ...(currentValue !== undefined && { currentValue }),
       notes: editNotes.trim() || undefined,
     };
     api.properties
@@ -163,7 +208,6 @@ export default function PropertyDetailPage() {
     : "";
 
   return (
-    <RequireOrganization>
       <Container className="py-6 space-y-6">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
@@ -210,38 +254,7 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Stat cards */}
-            <div className="flex flex-wrap gap-4">
-              {property.totalUnits != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
-                  <p className="text-2xl font-bold">{property.totalUnits}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Total units</p>
-                </div>
-              )}
-              {property.totalFloors != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
-                  <p className="text-2xl font-bold">{property.totalFloors}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Floors</p>
-                </div>
-              )}
-              {property.yearBuilt != null && (
-                <div className="flex-1 min-w-[120px] rounded-lg border border-border bg-card p-4 text-center">
-                  <p className="text-2xl font-bold">{property.yearBuilt}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Year built</p>
-                </div>
-              )}
-              {property.purchasePrice != null && (
-                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center">
-                  <p className="text-2xl font-bold">{formatCurrency(property.purchasePrice)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Purchase price</p>
-                </div>
-              )}
-              {property.currentValue != null && (
-                <div className="flex-1 min-w-[140px] rounded-lg border border-border bg-card p-4 text-center">
-                  <p className="text-2xl font-bold">{formatCurrency(property.currentValue)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Current value</p>
-                </div>
-              )}
-            </div>
+            <PropertySummary {...property} />
 
             <div className="grid gap-4 md:grid-cols-2">
               {/* Details */}
@@ -320,6 +333,15 @@ export default function PropertyDetailPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Edit property</h2>
             </div>
+
+            <section className="border-border-button-default bg-background-primary-default flex flex-col gap-4 rounded-3xl border p-5">
+              <h3 className="text-headline-medium">Property valuation</h3>
+              <p className="text-body-2-regular text-text-secondary">Values are separate from rent and do not change existing invoices.</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Purchase price" inputMode="decimal" value={editPurchasePrice} onChange={setEditPurchasePrice} />
+                <Input label="Current value" inputMode="decimal" value={editCurrentValue} onChange={setEditCurrentValue} />
+              </div>
+            </section>
 
             <div className="rounded-lg border border-border bg-card p-5 space-y-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Basic info</h3>
@@ -500,6 +522,5 @@ export default function PropertyDetailPage() {
           </form>
         )}
       </Container>
-    </RequireOrganization>
   );
 }
