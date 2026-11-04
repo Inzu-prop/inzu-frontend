@@ -14,6 +14,7 @@ import {
 } from "@/components/base/table/table";
 import Container from "@/components/container";
 import { RequireOrganization } from "@/components/require-organization";
+import { useCurrentOrganizationId } from "@/hooks/use-current-organization-id";
 import { useInzuApi } from "@/hooks/use-inzu-api";
 import { ApiError, type PaymentListItem } from "@/lib/api";
 import { money } from "@/lib/tenant-profile";
@@ -40,6 +41,15 @@ function paymentReference(payment: PaymentListItem): string {
 }
 
 export default function PaymentsPage() {
+  const { organizationId } = useCurrentOrganizationId();
+  return (
+    <RequireOrganization>
+      {organizationId && <PaymentsRegister key={organizationId} />}
+    </RequireOrganization>
+  );
+}
+
+function PaymentsRegister() {
   const api = useInzuApi();
   const [data, setData] = useState<PaymentListItem[] | null>(null);
   const [total, setTotal] = useState<number | null>(null);
@@ -75,7 +85,6 @@ export default function PaymentsPage() {
   }, [api.payments, revision]);
 
   return (
-    <RequireOrganization>
       <Container className="flex flex-col gap-4 py-5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -192,6 +201,5 @@ export default function PaymentsPage() {
           </section>
         )}
       </Container>
-    </RequireOrganization>
   );
 }

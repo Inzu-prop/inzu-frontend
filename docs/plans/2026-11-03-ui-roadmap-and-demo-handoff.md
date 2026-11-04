@@ -1,21 +1,38 @@
 # INZU: UI roadmap and populated demo handoff
 
-Date: 3 November 2026 (Africa/Nairobi)
-Status: Planning only. No implementation or deployment authorized by this document alone.
+Original plan: 3 November 2026 (Africa/Nairobi)
+Status: Frontend implementation is partially complete. Backend-dependent work and integrated verification remain open.
 Purpose: Durable project memory and a self-contained starting point for a new chat.
 
 ## Start here in the next chat
 
-Read this document, the repository's `AGENTS.md`, and the BoardUI skill before implementation. Inspect the current working tree because this plan records the state on the date above. The user will choose when to start implementation; do not treat the deferred demo as approval to populate a live account.
+Read this document, the repository's `AGENTS.md`, and the BoardUI skill before further implementation. Inspect the current working tree and the delivery status below; the phase sections preserve the original scope and acceptance criteria, including work that remains open. The user explicitly deferred the populated demo account: do not populate a live account without a separate request.
 
 Suggested opening prompt:
 
-> Read docs/plans/2026-11-03-ui-roadmap-and-demo-handoff.md. Implement the UI roadmap in phases, starting with the sidebar persistence bug. Preserve the INZU styling and existing authenticated integrations. Check the documented backend gaps before promising functionality. Keep the populated five-year demo deferred unless I explicitly ask to start it.
+> Read docs/plans/2026-11-03-ui-roadmap-and-demo-handoff.md and its delivery status. Continue the unfinished UI roadmap using verified backend contracts, preserving INZU styling and authenticated integrations. Keep the populated five-year demo deferred unless I explicitly ask to start it.
 
 Repository: `D:\PROJECT SWE\inzu-frontend-main\inzu-frontend-main`
 Remote: `https://github.com/Inzu-prop/inzu-frontend.git`
-Last verified pushed commit: `df1c2c5` on `master`, tracking `origin/master`.
-That push updated master directly; there was no separate merge. Hosting/deployment success has not been verified.
+Last verified pushed implementation commit: `f5526c8` on `master`, tracking `origin/master`, updating PR #13. Hosting/deployment success has not been verified.
+
+## Delivery status (4 November 2026)
+
+The user asked to proceed with the frontend work supported by the available code and will provide backend access later. The populated live demo remains deferred. The original phase descriptions below are requirements and acceptance criteria, not a claim that every item is complete.
+
+| Phase | Status | Delivered and remaining |
+| --- | --- | --- |
+| 0: Backend contracts | Open | Client methods and types have been inspected; deployed API schemas, permissions, and a signed-in test organization are still needed. |
+| 1: Sidebar persistence | Implemented; browser verification outstanding | `949fe6d` adds a server-readable preference, legacy local-storage migration, and internal client navigation. First paint, reload, back/forward, storage restrictions, and mobile behavior need browser verification. |
+| 2: Search | Partial | `4777154` puts Search beside Reports, removes sidebar search, and consolidates Ctrl/Cmd+K into one accessible pages-and-quick-actions dialog. Record-wide search and preview fixture search remain open. |
+| 3: Tenant information | Partial | `67ea348` shows available read-only employment, guarantor, emergency-contact, and document metadata, with safe HTTPS file links when supplied. Private upload, replacement, deletion, signed-link refresh, and permissions require backend contracts. |
+| 4: Invoices | Partial | `245e3a9` adds an authenticated invoice detail route, links from tenant history and register, and a fictional preview detail. PDF download, full invoice search, and removal of the sidebar entry remain open. |
+| 5: Payments | Partial | `37742fd` improves the portfolio register and tenant payment history using existing list fields. Direct payment details, allocation information, reference search, and sidebar removal remain open. |
+| 6: Maintenance | Partial | `20a2504` adds authenticated and preview job details and links from the list and tenant history. Assignment, updates, completion contracts, search integration, and signed-in verification remain open. |
+| 7: Properties | Partial | `f5526c8` improves property details and supported live editing, including purchase/current values and strict numeric validation; preview has a shared detail view and session-only location editing. Full preview editing and live persistence verification remain open. |
+| 8: Integrated verification | Open | Automated checks pass, but browser, signed-in backend, production build, and release verification are incomplete. |
+
+Latest completed automated checks: TypeScript and lint passed, with the existing `dashboard-gate.tsx:270` `orgList` hook-dependency warning; all 32 tests passed. Browser interactions and signed-in backend behavior were not verified. A previous production build compiled but could not complete page generation without a local Clerk publishable key; a production build with valid deployment configuration remains unverified.
 
 Local preview: `http://127.0.0.1:3000/preview`
 Tenant example: `http://127.0.0.1:3000/preview/tenants/tenant-0`
@@ -41,12 +58,12 @@ Preview requires development mode and a loopback host. It is disabled in product
 ## Existing implementation and design constraints
 
 - Overview, Reports, and Tenant Profile already share presentation components between live and local preview. Live containers call authenticated APIs; sample data is separate.
-- Tenant profiles show contacts, tenancy, rent, reported arrears, lease dates, and searchable/paged invoice/payment/maintenance tables. Rows are not yet detail links. Live invoice generation exists.
-- Preview property, invoice, payment, and maintenance cards still have placeholder details in `src/components/local-preview.tsx`.
+- Tenant profiles show contacts, tenancy, rent, reported arrears, lease dates, and searchable/paged invoice/payment/maintenance tables. Invoice and maintenance records link to details; payment detail remains unavailable. Live invoice generation exists.
+- Preview property, invoice, and maintenance routes now have detail presentations. Payment detail and complete preview property editing remain open.
 - Preserve original INZU forest/sage palette, supplied logo, Be Vietnam Pro typography, compact sidebar, small header, and useful information near the top. Avoid large hero sections and oversized controls.
 - Use installed BoardUI source components, semantic tokens, and composite typography. `AGENTS.md` is authoritative for component mechanics; `src/styles/inzu-brand.css` contains current branding. Do not reinstall/reset the whole design system.
 - `README.md` and `CLAUDE.md` include older stack descriptions. Current package/source files establish Tailwind 4 and BoardUI; do not revert them to match stale prose.
-- Earlier verification: TypeScript and lint passed, 13 tests passed, preview tenant route returned HTTP 200. Browser automation was unavailable. Signed-in backend functionality and production build remain unverified; the earlier build was blocked by missing local Clerk publishable-key configuration.
+- The latest automated verification and its limitations are recorded in Delivery status above.
 
 ## Phase 0: Documentation discovery and backend contracts
 
@@ -66,8 +83,8 @@ These are methods present in the frontend client, not proof that the deployed ba
 | `src/lib/api/uploads.ts` | `uploadFileToPresignedUrl()` | Existing upload helper keeps Clerk authorization out of the storage PUT. Reuse after obtaining an authorized upload URL; verify each upload response contract. |
 | `src/components/tenant-profile-view.tsx`; `src/app/(dashboard)/tenants/[tenantId]/page.tsx`; `src/lib/tenant-profile.ts` | Shared presentation, live container, strict tenant scoping, partial failure states | Reuse for detail tabs. Payments may link through owned invoices; explicit conflicting tenant IDs are excluded. |
 | `src/components/base/table/table.tsx`; `src/components/base/pagination/pagination.tsx`; `src/components/base/tabs/tabs.tsx` | BoardUI accessible tables, pagination, tabs | Copy established profile patterns; retain keyboard navigation and explicit empty/error states. |
-| `src/components/command-palette.tsx` | Ctrl/Cmd+K dialog and `router.push` navigation over static navigation items | Reuse opening/navigation behavior, not its current search data source or obsolete hard-coded styling. |
-| `src/components/base/buttons/button.tsx:182`; `src/lib/atoms.ts:56` | `ButtonLink` renders `<a>`; `sidebarCollapsedAtom` persists with initial value `false` | Relevant to sidebar reload/rehydration hypothesis. |
+| `src/components/command-palette.tsx` | Ctrl/Cmd+K dialog searches pages and quick actions | Shared by live and preview; full record search still needs a verified backend contract. |
+| `src/components/base/buttons/button.tsx`; `src/lib/atoms.ts`; `src/lib/sidebar-preference.ts` | Internal `ButtonLink` navigation uses Next Link; sidebar preference uses server-readable cookie storage | Legacy local-storage state is migrated; first-paint behavior still needs browser verification. |
 | `frontend_tenant_status_brief.md` | `active`, `inactive`, `blacklisted`, `prospective`; update requires MANAGE_TENANTS | Preserve supported statuses. Do not invent a backend `archived` status. |
 
 ### Required backend discovery before dependent implementation
@@ -86,7 +103,7 @@ Verification: compare client signatures to actual backend responses with a test 
 
 ### Delivery order and dependencies
 
-Run Phase 1 first. Phase 0 backend discovery can continue alongside frontend work. Phase 2 establishes search placement, shared UI, and a confirmed search contract; its invoice/payment/maintenance deep-link acceptance checks finish after Phases 4–6 create those destinations. Do not call search complete while some result types lead to placeholders. Phase 3 depends on document storage/permissions contracts; Phases 4–6 depend on their detail contracts. Phase 7 can proceed independently using existing property APIs. Phase 8 is the release gate for the combined scope. Split each phase into a reviewable change and record incomplete dependencies explicitly.
+Phases 1–7 have been implemented to the extent listed in Delivery status. Continue Phase 0 backend discovery before the dependent work; Phase 8 remains the release gate. Do not call search complete while record search and its destinations are incomplete. Split future work into reviewable changes and record incomplete dependencies explicitly.
 
 ## Phase 1: Fix navigation persistence before adding detail flows
 
@@ -266,4 +283,4 @@ No immediate questions are required to retain this plan. Resolve these when impl
 
 ## Current handoff status
 
-This file preserves the user's requested changes, recommended information architecture, source-backed discovery, acceptance checks, and deferred demo proposal. It does not implement those changes. Start with Phase 1 after authorization while resolving Phase 0 contracts for dependent work. Keep this file updated so future chats do not need the original conversation.
+This file preserves the requested changes, delivered frontend work, remaining backend dependencies, acceptance checks, and deferred demo proposal. Continue from the Delivery status rather than restarting Phase 1. Keep this handoff updated so future chats do not need the original conversation.

@@ -6,9 +6,6 @@ import { averageTicketsCreated } from "@/data/average-tickets-created";
 import { sidebarPreferenceStorage } from "@/lib/sidebar-preference";
 import type { TicketMetric } from "@/types/types";
 
-/** Optional override: when set, API client uses this org ID instead of Clerk's active organization (e.g. for org switcher). */
-export const selectedOrganizationIdAtom = atom<string | null>(null);
-
 /** Controls whether the mobile nav drawer is open. */
 export const mobileNavOpenAtom = atom(false);
 

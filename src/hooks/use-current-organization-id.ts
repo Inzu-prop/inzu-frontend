@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth, useOrganization } from "@clerk/nextjs";
-import { useAtomValue } from "jotai";
-import { selectedOrganizationIdAtom } from "@/lib/atoms";
 import { createInzuApiClient } from "@/lib/api/client";
+import { currentMappedOrganizationId, findMatchingBackendOrg, isOrganizationMappingCurrent, organizationMappingCacheEntry, organizationScope, ORGANIZATION_MAPPING_CACHE_KEY, resolveOrCreateOrganization, validCachedOrganizationId } from "@/lib/organization-scope";
 
 type AuthOrganizationResponse = {
   organization: {
@@ -16,22 +15,6 @@ type AuthOrganizationResponse = {
 
 type BackendOrg = { _id: string; name?: string; [key: string]: unknown };
 
-function findMatchingBackendOrg(
-  orgs: BackendOrg[] | undefined,
-  clerkName: string,
-): BackendOrg | null {
-  if (!orgs || orgs.length === 0) return null;
-  const normalized = clerkName.trim().toLowerCase();
-  const byName = orgs.find(
-    (o) => typeof o.name === "string" && o.name.trim().toLowerCase() === normalized,
-  );
-  // Fall back to the first org if no name match — handles the case where
-  // Clerk and backend names diverged but the user only has one backend org.
-  return byName ?? orgs[0];
-}
-
-const INZU_ORG_ID_MAP_STORAGE_KEY = "inzuOrgIdByClerkOrgId";
-
 export function useCurrentOrganizationId(): {
   organizationId: string | null;
   isLoaded: boolean;
@@ -40,12 +23,13 @@ export function useCurrentOrganizationId(): {
 } {
   const { organization, isLoaded } = useOrganization();
   const { getToken, isLoaded: authIsLoaded, userId, sessionId } = useAuth();
-  const selectedId = useAtomValue(selectedOrganizationIdAtom);
 
   const [inzuOrganizationId, setInzuOrganizationId] = useState<string | null>(null);
   const [mappingLoaded, setMappingLoaded] = useState(false);
+  const [mappingScope, setMappingScope] = useState<string | null>(null);
   const [mappingError, setMappingError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const currentScope = organizationScope(userId, sessionId, organization?.id);
 
   const api = useMemo(
     () =>
@@ -65,6 +49,11 @@ export function useCurrentOrganizationId(): {
         return;
       }
 
+      // Clear the previous organization before resolving this context. If
+      // resolution fails, it must never be returned under the new scope.
+      setInzuOrganizationId(null);
+      setMappingScope(organizationScope(userId, sessionId, organization?.id));
+
       if (!organization) {
         setInzuOrganizationId(null);
         setMappingLoaded(true);
@@ -74,7 +63,7 @@ export function useCurrentOrganizationId(): {
         // (e.g. org was deleted on another device)
         if (typeof window !== "undefined") {
           try {
-            window.localStorage.removeItem(INZU_ORG_ID_MAP_STORAGE_KEY);
+            window.localStorage.removeItem(ORGANIZATION_MAPPING_CACHE_KEY);
           } catch {
             // Ignore storage errors
           }
@@ -90,9 +79,9 @@ export function useCurrentOrganizationId(): {
         // Check if we already have the mapping stored
         if (typeof window !== "undefined") {
           try {
-            const raw = window.localStorage.getItem(INZU_ORG_ID_MAP_STORAGE_KEY);
+            const raw = window.localStorage.getItem(ORGANIZATION_MAPPING_CACHE_KEY);
             const map: Record<string, string> = raw ? JSON.parse(raw) : {};
-            const existing = map[organization.id];
+            const existing = validCachedOrganizationId(map[organizationMappingCacheEntry(userId, organization.id)]);
 
             if (existing) {
               if (!cancelled) {
@@ -103,7 +92,7 @@ export function useCurrentOrganizationId(): {
             }
           } catch {
             // Corrupted localStorage — clear it and continue to API call
-            window.localStorage.removeItem(INZU_ORG_ID_MAP_STORAGE_KEY);
+            window.localStorage.removeItem(ORGANIZATION_MAPPING_CACHE_KEY);
           }
         }
 
@@ -113,10 +102,10 @@ export function useCurrentOrganizationId(): {
         const persistMapping = (newId: string) => {
           if (typeof window === "undefined") return;
           try {
-            const raw = window.localStorage.getItem(INZU_ORG_ID_MAP_STORAGE_KEY);
+            const raw = window.localStorage.getItem(ORGANIZATION_MAPPING_CACHE_KEY);
             const map: Record<string, string> = raw ? JSON.parse(raw) : {};
-            map[organization.id] = newId;
-            window.localStorage.setItem(INZU_ORG_ID_MAP_STORAGE_KEY, JSON.stringify(map));
+            map[organizationMappingCacheEntry(userId, organization.id)] = newId;
+            window.localStorage.setItem(ORGANIZATION_MAPPING_CACHE_KEY, JSON.stringify(map));
           } catch {
             // Ignore storage errors — cache is an optimization, not a requirement
           }
@@ -134,6 +123,7 @@ export function useCurrentOrganizationId(): {
           if (cancelled) return;
 
           const token = await getToken();
+          if (cancelled) return;
           if (!token) {
             lastError = "Unable to authenticate. Please try again.";
             continue;
@@ -143,34 +133,30 @@ export function useCurrentOrganizationId(): {
             // Check for an existing backend org first. This handles the
             // cross-device case where the backend already has an org for
             // this user but localStorage has no mapping.
-            const me = await api.auth.me();
-            const existingBackendOrg = findMatchingBackendOrg(
-              me?.organizations as BackendOrg[] | undefined,
+            const resolvedId = await resolveOrCreateOrganization(
+              async () => {
+                const me = await api.auth.me();
+                return me?.organizations as BackendOrg[] | undefined;
+              },
+              async () => {
+                const response = (await api.auth.createOrganization({
+                  name: clerkOrgName,
+                })) as AuthOrganizationResponse;
+                return response?.organization?._id;
+              },
               clerkOrgName,
+              () => cancelled,
             );
-
-            if (existingBackendOrg?._id && !cancelled) {
-              setInzuOrganizationId(existingBackendOrg._id);
+            if (cancelled) return;
+            if (resolvedId) {
+              setInzuOrganizationId(resolvedId);
               setMappingLoaded(true);
-              persistMapping(existingBackendOrg._id);
+              persistMapping(resolvedId);
               return;
             }
-
-            // No existing backend org — create one.
-            const response = (await api.auth.createOrganization({
-              name: clerkOrgName,
-            })) as AuthOrganizationResponse;
-            const newId = response?.organization?._id ?? null;
-
-            if (newId && !cancelled) {
-              setInzuOrganizationId(newId);
-              setMappingLoaded(true);
-              persistMapping(newId);
-              return;
-            }
-
-            lastError = "Organization was created but no ID was returned.";
+            lastError = "Unable to resolve organization.";
           } catch (err) {
+            if (cancelled) return;
             const message =
               err instanceof Error ? err.message : String(err);
 
@@ -179,6 +165,7 @@ export function useCurrentOrganizationId(): {
             if (/already have an organization/i.test(message)) {
               try {
                 const me = await api.auth.me();
+                if (cancelled) return;
                 const existingBackendOrg = findMatchingBackendOrg(
                   me?.organizations as BackendOrg[] | undefined,
                   clerkOrgName,
@@ -200,11 +187,13 @@ export function useCurrentOrganizationId(): {
 
         // All attempts exhausted
         if (!cancelled) {
+          setInzuOrganizationId(null);
           setMappingError(lastError ?? "Failed to set up organization. Please try again.");
           setMappingLoaded(true);
         }
       } catch {
         if (!cancelled) {
+          setInzuOrganizationId(null);
           setMappingError("Something went wrong. Please try again.");
           setMappingLoaded(true);
         }
@@ -218,10 +207,11 @@ export function useCurrentOrganizationId(): {
     };
   }, [organization, api, authIsLoaded, userId, sessionId, getToken, retryCount]);
 
-  const organizationId =
-    selectedId !== null
-      ? selectedId
-      : inzuOrganizationId ?? null;
+  // The previous mapping belongs to a different Clerk context as soon as
+  // organization, user or session changes, even before effects have run.
+  const mappingCurrent =
+    authIsLoaded && isLoaded && isOrganizationMappingCurrent(currentScope, mappingScope, mappingLoaded);
+  const organizationId = currentMappedOrganizationId(mappingCurrent, mappingError, inzuOrganizationId);
 
   const retry = () => {
     setMappingError(null);
@@ -231,8 +221,8 @@ export function useCurrentOrganizationId(): {
 
   return {
     organizationId,
-    isLoaded: authIsLoaded && isLoaded && (!organization || mappingLoaded),
-    error: mappingError,
+    isLoaded: mappingCurrent,
+    error: mappingCurrent ? mappingError : null,
     retry,
   };
 }

@@ -17,8 +17,18 @@ import {
 export default function InvoiceDetailPage() {
   const params = useParams();
   const invoiceId = String(params.invoiceId);
-  const api = useInzuApi();
   const { organizationId } = useCurrentOrganizationId();
+  return (
+    <RequireOrganization>
+      {organizationId && (
+        <InvoiceDetail key={JSON.stringify([organizationId, invoiceId])} invoiceId={invoiceId} />
+      )}
+    </RequireOrganization>
+  );
+}
+
+function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
+  const api = useInzuApi();
   const [invoice, setInvoice] = useState<InvoiceDetail>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,10 +38,6 @@ export default function InvoiceDetailPage() {
     let active = true;
     setInvoice(undefined);
     setError("");
-    if (!organizationId) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     api.invoices
       .get(invoiceId)
@@ -55,14 +61,13 @@ export default function InvoiceDetailPage() {
     return () => {
       active = false;
     };
-  }, [api.invoices, invoiceId, organizationId, revision]);
+  }, [api.invoices, invoiceId, revision]);
 
   const backHref = invoice?.tenantId
     ? `/tenants/${encodeURIComponent(invoice.tenantId)}?tab=invoices`
     : "/invoices";
 
   return (
-    <RequireOrganization>
       <Container className="py-5">
         {loading && (
           <p role="status" className="text-body-regular text-text-secondary">
@@ -89,6 +94,5 @@ export default function InvoiceDetailPage() {
           <InvoiceDetailView invoice={invoice} backHref={backHref} />
         )}
       </Container>
-    </RequireOrganization>
   );
 }

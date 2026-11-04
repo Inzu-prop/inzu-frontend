@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useOrganization } from "@clerk/nextjs";
+import { useAuth, useOrganization } from "@clerk/nextjs";
 import { CommandPalette } from "@/components/command-palette";
 import { SideNav } from "@/components/nav";
 import { useAuthMe } from "@/hooks/use-auth-me";
@@ -23,12 +23,32 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 }
 
 function AuthenticatedChrome({ children }: { children: React.ReactNode }) {
+  const { userId, sessionId } = useAuth();
+  const { organization } = useOrganization();
+  const identityKey = JSON.stringify([
+    userId ?? null,
+    sessionId ?? null,
+    organization?.id ?? null,
+  ]);
+  return <AuthenticatedChromeForScope key={identityKey}>{children}</AuthenticatedChromeForScope>;
+}
+
+function AuthenticatedChromeForScope({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isTenantUser, loading } = useAuthMe();
+  const { userId, sessionId } = useAuth();
   const { organization } = useOrganization();
   const { organizationId, isLoaded: orgMappingLoaded } =
     useCurrentOrganizationId();
   const isAuthRoute = AUTH_PATHS.some((p) => pathname?.startsWith(p));
+  // Discard all page and modal state when the active identity or backend
+  // organization changes, before effects in individual pages can run.
+  const scopeKey = JSON.stringify([
+    userId ?? null,
+    sessionId ?? null,
+    organization?.id ?? null,
+    organizationId,
+  ]);
 
   // Same source of truth as DashboardGate
   const needsOnboarding =
@@ -41,14 +61,14 @@ function AuthenticatedChrome({ children }: { children: React.ReactNode }) {
 
   if (!loading && isTenantUser) {
     return (
-      <div className="bg-background-full flex min-h-[100dvh] w-full flex-col">
+      <div key={scopeKey} className="bg-background-full flex min-h-[100dvh] w-full flex-col">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="bg-background-full flex min-h-[100dvh] w-full">
+    <div key={scopeKey} className="bg-background-full flex min-h-[100dvh] w-full">
       <CommandPalette />
       <SideNav />
       <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
