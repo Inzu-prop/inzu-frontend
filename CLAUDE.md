@@ -12,13 +12,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Runtime | React 19 RC |
 | Auth | **Clerk** (`@clerk/nextjs`) — orgs, roles, sign-in/sign-up |
 | State | **Jotai** v2 (atom-based, no Redux/Zustand) |
-| Styling | **Tailwind CSS v3** — PostCSS config, class-based dark mode |
-| UI Components | **Shadcn/Radix UI** — see `components.json` for aliases |
+| Styling | **Tailwind CSS v4** — semantic BoardUI tokens and class-based dark mode |
+| UI Components | **BoardUI** source components and existing Radix UI primitives |
 | Charts | **VisActor** (`@visactor/react-vchart`) |
-| Icons | `lucide-react` only |
+| Icons | `@remixicon/react` for BoardUI components; existing pages also use `lucide-react` |
 | Path aliases | `@/*` → `./src/*` (defined in `tsconfig.json`) |
 
-**Font:** `Plus_Jakarta_Sans` loaded from Google Fonts, exposed as CSS var `--font-gabarito`, applied via Tailwind `font-gabarito`.
+**Font:** Be Vietnam Pro, loaded in the root layout.
 
 ---
 
@@ -68,7 +68,6 @@ app/
   tenant/                 — Tenant portal (separate layout, TenantPortalShell)
   sign-in/[[...sign-in]]/ — Clerk catch-all
   sign-up/[[...sign-up]]/ — Clerk catch-all
-  ticket/                 — Maintenance ticket system (own layout)
 ```
 
 ### Auth & Role Routing
@@ -84,7 +83,7 @@ app/
 
 `createInzuApiClient(deps)` in `src/lib/api/client.ts` — factory with dependency injection:
 - `deps.getToken()` — from Clerk `useAuth()`
-- `deps.getOrganizationId()` — from Clerk org or Jotai override atom
+- `deps.getOrganizationId()` — resolved from the current Clerk organization
 
 All API calls use `Authorization: Bearer <token>` and include org ID. Errors throw `ApiError` (`src/lib/api/errors.ts`).
 
@@ -107,9 +106,9 @@ Valid values for tenant `status` field (from backend): `active`, `inactive`, `bl
 ### State (Jotai)
 
 Atoms in `src/lib/atoms.ts`:
-- `selectedOrganizationIdAtom` — override active org (used when Clerk org is absent)
-- `dateRangeAtom` — shared date range for chart filtering
-- `ticketChartDataAtom` — derived atom: filters tickets by date range
+- `mobileNavOpenAtom` — mobile navigation drawer state
+- `commandPaletteOpenAtom` — global navigation search state
+- `sidebarCollapsedAtom` — persisted desktop sidebar preference
 
 ### Tenant Context
 

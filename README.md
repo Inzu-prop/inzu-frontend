@@ -24,7 +24,7 @@ INZU is a landlord dashboard and tenant portal for managing residential and comm
 - **React 19**
 - **Clerk** — Authentication and organization management
 - **Jotai** — Lightweight atom-based state
-- **Tailwind CSS v3** — Custom `inzu.*` color tokens
+- **Tailwind CSS v4 and BoardUI** — semantic design tokens and source-owned components
 - **VisActor** — Charts and data visualization
 - **Shadcn/Radix UI** — Accessible UI primitives
 
